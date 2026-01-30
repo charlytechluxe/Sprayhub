@@ -27,23 +27,22 @@ def segment_wall_pro(image_path, output_json, model_cfg, checkpoint_path):
     
     sam2 = build_sam2(model_cfg, checkpoint_path, device=device)
     
-    # Pro Configuration: High-density grid scan
+    # Paranoiac Configuration: Ultra-high density grid scan
     mask_generator = SAM2AutomaticMaskGenerator(
         model=sam2,
-        points_per_side=64, # Ultra-high density grid scan
-        points_per_batch=128,
-        pred_iou_thresh=0.7, # Catch even low-confidence micro-holds
-        stability_score_thresh=0.92,
-        min_mask_region_area=15, # Detect tiny foot chips
+        points_per_side=80, # Massive grid scan to catch every tiny detail
+        points_per_batch=64,
+        pred_iou_thresh=0.5, # Drastically lowered to catch doubtful holds
+        stability_score_thresh=0.85, # Increased sensitivity
+        min_mask_region_area=5, # Detect even the smallest chips
     )
 
-    print("SAM 2 Grid Scan in progress...")
+    print("SAM 2 ULTRA-SCAN in progress...")
     masks = mask_generator.generate(image_rgb)
     
     holds_data = []
     
     for i, mask in enumerate(masks):
-        # Instance segmentation mask to polygon
         binary_mask = mask['segmentation'].astype(np.uint8) * 255
         contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -52,25 +51,25 @@ def segment_wall_pro(image_path, output_json, model_cfg, checkpoint_path):
             
         c = max(contours, key=cv2.contourArea)
         
-        # PRO Precision: Very low epsilon for maximum curvature fidelity
-        epsilon = 0.0005 * cv2.arcLength(c, True)
+        # Zero-simplification approach: keep high fidelity
+        # 0.0001 epsilon is almost no simplification
+        epsilon = 0.0001 * cv2.arcLength(c, True)
         approx = cv2.approxPolyDP(c, epsilon, True)
         
-        # Normalize to % for Supabase/React
-        normalized_contour = [[round(pt[0][0] / w, 5), round(pt[0][1] / h, 5)] for pt in approx]
+        normalized_contour = [[round(pt[0][0] / w, 6) for pt in approx], [round(pt[0][1] / h, 6) for pt in approx]]
+        # Note: I'll stick to the [[x,y], [x,y]] format as it's cleaner for the React loop
+        normalized_contour = [[round(pt[0][0] / w, 6), round(pt[0][1] / h, 6)] for pt in approx]
             
         holds_data.append({
             "id": f"h_{i}",
             "contour": normalized_contour,
-            "area_px": float(mask['area']),
-            "bbox": [round(x, 4) for x in mask['bbox']]
+            "area_px": float(mask['area'])
         })
 
-    # Save for frontend injection
     with open(output_json, 'w') as f:
         json.dump(holds_data, f, indent=2)
         
-    print(f"Done! {len(holds_data)} professional instances detected.")
+    print(f"ULTRA-SCAN COMPLETE: {len(holds_data)} instances captured.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
