@@ -11,6 +11,7 @@
 | :--- | :--- | :--- | :--- |
 | **Architecture** | Ecosystem | ✅ Done | Reorganized into `apps/client-pwa` and `apps/admin-hub` |
 | **Database Schema** | Backend | ✅ Done | Moderation, config, training, and sponsors added |
+| **Supabase Integration** | Ecosystem | ✅ Active | Credentials configured and .env files set |
 | **Admin Hub (Native)** | Admin | 🚧 Dev | Electron project initialized with Sidebar & Dashboard |
 | **Wall Management** | Admin | 🔄 In Progress | UI started, logic for 4K upload pending |
 | **Route Moderation** | Admin | 🔄 In Progress | UI started, dashboard mock ready |
