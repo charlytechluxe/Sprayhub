@@ -89,13 +89,11 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                                 key={poly.id}
                                                 points={points}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
-                                                className={`
-                                                    transition-all duration-200 cursor-pointer
-                                                `}
+                                                className="transition-all duration-200 cursor-pointer"
                                                 fill="transparent"
-                                                stroke={hold ? TYPE_COLORS[hold.type] : "transparent"}
-                                                strokeWidth={hold ? 1 : 0}
-                                                filter={hold ? `drop-shadow(0 0 4px ${TYPE_COLORS[hold.type]})` : "none"}
+                                                stroke={hold ? TYPE_COLORS[hold.type] : "rgba(255, 255, 255, 0.3)"}
+                                                strokeWidth="1"
+                                                filter={hold ? `drop-shadow(0 0 5px ${TYPE_COLORS[hold.type]})` : "none"}
                                                 strokeLinejoin="round"
                                             />
                                         );
