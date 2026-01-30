@@ -10,7 +10,8 @@
 | Feature | Platform | Status | Notes |
 | :--- | :--- | :--- | :--- |
 | **Architecture** | Ecosystem | ✅ Done | Reorganized into `apps/client-pwa` and `apps/admin-hub` |
-| **Database Schema** | Backend | ✅ Done | Moderation, config, training, and sponsors added |
+| **Database Schema** | Backend | ✅ Done | Polygonal Pro structure (JSONB) implemented |
+| **Instance Segmentation** | Backend | ✅ SAM 2 | Automatic grid scan with high-fidelity polygons |
 | **Supabase Integration** | Ecosystem | ✅ Active | Credentials configured and .env files set |
 | **Admin Hub (Native)** | Admin | 🚧 Dev | Electron project initialized with Sidebar & Dashboard |
 | **Wall Management** | Admin | 🔄 In Progress | UI started, logic for 4K upload pending |
