@@ -3,17 +3,23 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import AI_DATA from '../data/holds_final_force.json';
 
 const TYPE_COLORS = {
-    start: '#00FF00',    // Vert Fluo
-    handfoot: '#00FFFF', // Bleu Cyan
-    foot: '#FFD700',     // Jaune
-    top: '#FF0000'       // Rouge Fluo
+    start: '#00FF00',    // Neon Green
+    handfoot: '#00FFFF', // Cyan Blue
+    foot: '#FFD700',     // Neon Yellow
+    top: '#FF0000'       // Neon Red
 };
 
 const TYPE_CYCLE = ['start', 'handfoot', 'foot', 'top', 'none'];
 
+/**
+ * SprayCanvas: Professional Minimalist Rendering (Stōkt/Crux Style)
+ * - Transparent Fill
+ * - 1px Stroke with Dynamic Colors
+ * - Neon Glow Filter on Selection
+ */
 export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateHold, onRemoveHold, isEditable = false }) {
 
-    // Create a map for quick lookup of selected holds
+    // Quick lookup for selected holds
     const selectedHoldsMap = useMemo(() => {
         const map = {};
         holds.forEach(h => {
@@ -29,7 +35,7 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
         const existingHold = selectedHoldsMap[polygon.id];
 
         if (!existingHold) {
-            // Calculate center for meta-info
+            // Find center for placement logic
             const centerX = polygon.contour.reduce((sum, p) => sum + p[0], 0) / polygon.contour.length;
             const centerY = polygon.contour.reduce((sum, p) => sum + p[1], 0) / polygon.contour.length;
 
@@ -73,14 +79,9 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                     className="w-full h-full object-cover select-none pointer-events-none"
                                 />
 
-                                {/* VERSION MARKER TO ENSURE USER IS NOT ON CACHED VERSION */}
-                                <div className="absolute top-4 right-4 bg-accent-pink text-white text-[8px] font-black px-2 py-1 rounded italic tracking-widest uppercase z-50 shadow-lg">
-                                    AI-CORE V3 ACTIVATED
-                                </div>
-
                                 <svg
                                     viewBox="0 0 1000 1333.33"
-                                    className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+                                    className="absolute inset-0 w-full h-full cursor-crosshair touch-none overflow-visible"
                                 >
                                     {AI_DATA.map((poly) => {
                                         const isSelected = !!selectedHoldsMap[poly.id];
@@ -92,14 +93,15 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                                 key={poly.id}
                                                 points={points}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
-                                                className="transition-all duration-150 cursor-pointer"
-                                                // MODE FANTÔME : INVISIBLE SI NON SÉLECTIONNÉ
-                                                fill={isSelected ? `${TYPE_COLORS[hold.type]}22` : "transparent"}
+                                                className="transition-all duration-100 cursor-pointer"
+                                                // Minimalist Pro Style
+                                                fill="none"
                                                 stroke={isSelected ? TYPE_COLORS[hold.type] : "transparent"}
-                                                strokeWidth={isSelected ? "2.5" : "0"}
-                                                // EFFET NÉON RÉEL SUR LA FORME DE LA PRISE
-                                                filter={isSelected ? `drop-shadow(0 0 10px ${TYPE_COLORS[hold.type]})` : "none"}
+                                                strokeWidth="1"
+                                                // High-Visibility Neon Glow
+                                                filter={isSelected ? `drop-shadow(0 0 5px ${TYPE_COLORS[hold.type]})` : "none"}
                                                 strokeLinejoin="round"
+                                                vectorEffect="non-scaling-stroke"
                                             />
                                         );
                                     })}
