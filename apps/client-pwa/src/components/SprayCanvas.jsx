@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import SEGMENTED_HOLDS from '../data/holds_segmentation.json';
+import SEGMENTED_HOLDS from '../data/holds_pro_v2.json';
 
 const TYPE_COLORS = {
-    start: '#A4C639',    // Green
-    handfoot: '#32A9D6', // Blue
-    foot: '#FFD700',     // Yellow
-    top: '#FB2056'       // Pink
+    start: '#00FF00',    // Vert Fluo
+    handfoot: '#00FFFF', // Bleu Cyan
+    foot: '#FFD700',     // Jaune
+    top: '#FF0000'       // Rouge Fluo
 };
 
 const TYPE_CYCLE = ['start', 'handfoot', 'foot', 'top', 'none'];
@@ -72,8 +72,11 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                 <img
                                     src={imageUrl}
                                     alt="Spray Wall"
-                                    className="w-full h-full object-cover select-none pointer-events-none opacity-70"
+                                    className="w-full h-full object-cover select-none pointer-events-none"
                                 />
+                                <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-tighter opacity-30 select-none pointer-events-none border border-white/10">
+                                    V2 PRO
+                                </div>
                                 <svg
                                     // Use a high-density coordinate system (0-1000) to avoid any jitter
                                     viewBox="0 0 1000 1333.33"
