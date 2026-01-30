@@ -94,12 +94,12 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                                 points={points}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
                                                 className="transition-all duration-100 cursor-pointer"
-                                                // Minimalist Pro Style
+                                                // Minimalist Pro Style: 1px wireframe
                                                 fill="none"
-                                                stroke={isSelected ? TYPE_COLORS[hold.type] : "transparent"}
+                                                stroke={isSelected ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.15)"}
                                                 strokeWidth="1"
-                                                // High-Visibility Neon Glow
-                                                filter={isSelected ? `drop-shadow(0 0 5px ${TYPE_COLORS[hold.type]})` : "none"}
+                                                // High-Visibility Neon Glow only when selected
+                                                filter={isSelected ? `drop-shadow(0 0 8px ${TYPE_COLORS[hold.type]})` : "none"}
                                                 strokeLinejoin="round"
                                                 vectorEffect="non-scaling-stroke"
                                             />

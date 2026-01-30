@@ -28,18 +28,15 @@ def segment_wall_pixel_perfect(image_path, output_json, checkpoint_path):
     sam.to(device=device)
     
     # "Paranoiac" AI Configuration
-    # pred_iou_thresh=0.85: Extremely picky about quality
-    # stability_score_thresh=0.92: High confidence required
-    # points_per_side=80: Massive grid density
     mask_generator = SamAutomaticMaskGenerator(
         model=sam,
-        points_per_side=80,
-        pred_iou_thresh=0.85,
-        stability_score_thresh=0.92,
-        min_mask_region_area=5, # Detect even 5px chips
+        points_per_side=80, # High density grid
+        pred_iou_thresh=0.85, # Very strict quality
+        stability_score_thresh=0.92, # High stability required
+        min_mask_region_area=5, # Detect tiny chips
     )
 
-    print("AI IS SCANNING EVERY PIXEL... (This might take 1-2 minutes)")
+    print("AI IS SCANNING EVERY PIXEL... (Zero Simplification Mode)")
     masks = mask_generator.generate(image_rgb)
     
     holds_data = []
@@ -47,21 +44,20 @@ def segment_wall_pixel_perfect(image_path, output_json, checkpoint_path):
     for i, mask in enumerate(masks):
         binary_mask = mask['segmentation'].astype(np.uint8) * 255
         
-        # CHAIN_APPROX_NONE: Pixel-perfect contour tracking, NO simplification
+        # CHAIN_APPROX_NONE: EVERY pixel on the boundary is stored. NO simplification.
         contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         
         if not contours:
             continue
             
+        # Get the largest contour for the hold
         c = max(contours, key=cv2.contourArea)
         
-        # We still do a TINY bit of smoothing to avoid pixel-staircase effect in SVG
-        # but epsilon is effectively zero for the human eye
-        epsilon = 0.00005 * cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, epsilon, True)
+        # MISSION: ZERO SIMPLIFICATION. We do NOT use approxPolyDP here.
+        # We take the contour as it is.
         
         # Normalize to % with 6 decimal places for sub-pixel precision
-        normalized_contour = [[round(pt[0][0] / w, 6), round(pt[0][1] / h, 6)] for pt in approx]
+        normalized_contour = [[round(pt[0][0] / w, 6), round(pt[0][1] / h, 6)] for pt in c]
             
         holds_data.append({
             "id": f"hold_{i}",
@@ -75,7 +71,7 @@ def segment_wall_pixel_perfect(image_path, output_json, checkpoint_path):
     with open(output_json, 'w') as f:
         json.dump(holds_data, f, indent=2)
         
-    print(f"MISSION SUCCESS: {len(holds_data)} detected.")
+    print(f"MISSION SUCCESS: {len(holds_data)} pixel-perfect holds detected.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
