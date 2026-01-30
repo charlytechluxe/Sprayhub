@@ -95,7 +95,8 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                                 onClick={(e) => handlePolygonClick(e, poly)}
                                                 className="transition-all duration-100 cursor-pointer"
                                                 // Minimalist Pro Style: 1px wireframe
-                                                fill="none"
+                                                fill="transparent" // Transparent but CLICKABLE
+                                                pointerEvents="all" // Captures clicks everywhere inside
                                                 stroke={isSelected ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.15)"}
                                                 strokeWidth="1"
                                                 // High-Visibility Neon Glow only when selected
