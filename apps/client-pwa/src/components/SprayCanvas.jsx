@@ -90,11 +90,12 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                                 points={points}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
                                                 className={`
-                                                    transition-all duration-150 cursor-pointer
+                                                    transition-all duration-200 cursor-pointer
                                                 `}
                                                 fill="transparent"
                                                 stroke={hold ? TYPE_COLORS[hold.type] : "transparent"}
-                                                strokeWidth={hold ? 1.5 : 0}
+                                                strokeWidth={hold ? 1 : 0}
+                                                filter={hold ? `drop-shadow(0 0 4px ${TYPE_COLORS[hold.type]})` : "none"}
                                                 strokeLinejoin="round"
                                             />
                                         );
@@ -102,9 +103,9 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                 </svg>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center w-full h-full text-zinc-700 gap-2">
-                                <div className="w-12 h-12 rounded-full border-2 border-dashed border-zinc-800 animate-pulse" />
-                                <span className="font-medium text-sm">Chargement du mur...</span>
+                            <div className="flex flex-col items-center justify-center w-full h-full text-zinc-800 gap-3">
+                                <div className="w-10 h-10 rounded-full border border-zinc-900 border-t-accent-pink animate-spin" />
+                                <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-600">Initialisation IA...</span>
                             </div>
                         )}
                     </div>
