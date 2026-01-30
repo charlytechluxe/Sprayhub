@@ -1,31 +1,35 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import SEGMENTED_HOLDS from '../data/holds_segmentation.json';
 
 const TYPE_COLORS = {
-    start: '#A4C639',    // Art de la Grimpe Lime Green
-    handfoot: '#32A9D6', // Art de la Grimpe Blue
-    foot: '#FFD700',     // Art de la Grimpe Yellow
-    top: '#FB2056'       // Art de la Grimpe Pink
+    start: '#A4C639',    // Green
+    handfoot: '#32A9D6', // Blue
+    foot: '#FFD700',     // Yellow
+    top: '#FB2056'       // Pink
 };
 
 const TYPE_CYCLE = ['start', 'handfoot', 'foot', 'top', 'none'];
 
 export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateHold, onRemoveHold, isEditable = false }) {
 
-    // Find if a polygon is already selected in the route
-    const getHoldForPolygon = (polygonId) => {
-        return holds.find(h => h.id === polygonId);
-    };
+    // Create a map for quick lookup of selected holds by their polygon ID
+    const selectedHoldsMap = useMemo(() => {
+        const map = {};
+        holds.forEach(h => {
+            map[h.id] = h;
+        });
+        return map;
+    }, [holds]);
 
     const handlePolygonClick = (e, polygon) => {
         e.stopPropagation();
         if (!isEditable) return;
 
-        const existingHold = getHoldForPolygon(polygon.id);
+        const existingHold = selectedHoldsMap[polygon.id];
 
         if (!existingHold) {
-            // Add new hold using polygon center approx
+            // Calculate center for meta-info (like where to show notes)
             const centerX = polygon.contour.reduce((sum, p) => sum + p[0], 0) / polygon.contour.length;
             const centerY = polygon.contour.reduce((sum, p) => sum + p[1], 0) / polygon.contour.length;
 
@@ -38,7 +42,7 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                 contour: polygon.contour
             });
         } else {
-            // Cycle type
+            // Cycle through types: Start -> Main -> Foot -> Top -> Remove
             const currentIndex = TYPE_CYCLE.indexOf(existingHold.type);
             const nextIndex = (currentIndex + 1) % TYPE_CYCLE.length;
             const nextType = TYPE_CYCLE[nextIndex];
@@ -52,13 +56,14 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
     };
 
     return (
-        <div className="relative w-full h-full bg-black overflow-hidden rounded-3xl">
+        <div className="relative w-full h-full bg-zinc-950 overflow-hidden rounded-3xl border border-zinc-900 shadow-2xl">
             <TransformWrapper
                 initialScale={1}
                 minScale={1}
-                maxScale={10}
-                centerOnInit
+                maxScale={8}
+                centerOnInit={true}
                 limitToBounds={true}
+                wheel={{ step: 0.2 }}
             >
                 <TransformComponent wrapperClassName="!w-full !h-full" contentClassName="!w-full !h-full">
                     <div className="relative w-full h-full flex items-center justify-center">
@@ -66,79 +71,42 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                             <div className="relative w-full aspect-[3/4]">
                                 <img
                                     src={imageUrl}
-                                    alt="Wall"
-                                    className="w-full h-full object-cover select-none pointer-events-none opacity-80"
+                                    alt="Spray Wall"
+                                    className="w-full h-full object-cover select-none pointer-events-none opacity-70"
                                 />
                                 <svg
-                                    viewBox="0 0 100 133.33" // Coordinate system 0-100 on X, proportional on Y
+                                    // Use a high-density coordinate system (0-1000) to avoid any jitter
+                                    viewBox="0 0 1000 1333.33"
                                     className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
                                 >
-                                    {/* Render all detected polygons as interactive zones */}
                                     {SEGMENTED_HOLDS.map((poly) => {
-                                        const hold = getHoldForPolygon(poly.id);
-                                        const points = poly.contour.map(p => `${p[0] * 100},${p[1] * 133.33}`).join(' ');
+                                        const hold = selectedHoldsMap[poly.id];
+                                        // Formula: X_pixel = X_% * 1000, Y_pixel = Y_% * 1333.33
+                                        const points = poly.contour.map(p => `${p[0] * 1000},${p[1] * 1333.33}`).join(' ');
 
                                         return (
-                                            <g key={poly.id}>
-                                                <polygon
-                                                    points={points}
-                                                    onClick={(e) => handlePolygonClick(e, poly)}
-                                                    className={hold
-                                                        ? `hold-neon-${hold.type} cursor-pointer`
-                                                        : "hold-poly-base cursor-pointer opacity-20 hover:opacity-50"
-                                                    }
-                                                    fill={hold ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.2)"}
-                                                    fillOpacity={hold ? 0.4 : 0.1}
-                                                />
-
-                                                {/* Start/Top Indicators */}
-                                                {hold?.type === 'start' && (
-                                                    <circle
-                                                        cx={hold.x}
-                                                        cy={hold.y * 1.3333}
-                                                        r="2"
-                                                        fill="none"
-                                                        stroke={TYPE_COLORS.start}
-                                                        strokeWidth="0.5"
-                                                        strokeDasharray="1 0.5"
-                                                    />
-                                                )}
-                                                {hold?.type === 'top' && (
-                                                    <circle
-                                                        cx={hold.x}
-                                                        cy={hold.y * 1.3333}
-                                                        r="2"
-                                                        fill="none"
-                                                        stroke={TYPE_COLORS.top}
-                                                        strokeWidth="0.5"
-                                                        strokeDasharray="1 0.5"
-                                                    />
-                                                )}
-
-                                                {/* Note Display */}
-                                                {hold?.note && (
-                                                    <g transform={`translate(${hold.x}, ${hold.y * 1.3333 + 4})`}>
-                                                        <rect
-                                                            x="-5" y="-2" width="10" height="4" rx="1"
-                                                            fill="rgba(0,0,0,0.8)"
-                                                        />
-                                                        <text
-                                                            className="fill-white text-[2px] font-bold"
-                                                            textAnchor="middle"
-                                                            dominantBaseline="middle"
-                                                        >
-                                                            {hold.note}
-                                                        </text>
-                                                    </g>
-                                                )}
-                                            </g>
+                                            <polygon
+                                                key={poly.id}
+                                                points={points}
+                                                onClick={(e) => handlePolygonClick(e, poly)}
+                                                className={`
+                                                    transition-all duration-200 cursor-pointer
+                                                    ${hold ? `hold-neon-${hold.type}` : "fill-white/5 hover:fill-white/20"}
+                                                `}
+                                                fill={hold ? TYPE_COLORS[hold.type] : "transparent"}
+                                                fillOpacity={hold ? 0.4 : 0.05}
+                                                stroke={hold ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.1)"}
+                                                strokeWidth={hold ? 4 : 0.5}
+                                                strokeLinejoin="round"
+                                            />
                                         );
                                     })}
                                 </svg>
                             </div>
                         ) : (
-                            <div className="flex items-center justify-center w-full h-full text-zinc-600">
-                                Pas de photo chargée
+                            <div className="flex flex-col items-center justify-center w-full h-full text-zinc-700 gap-2">
+                                <div className="w-12 h-12 rounded-full border-2 border-dashed border-zinc-800 animate-pulse" />
+                                <span className="font-medium text-sm">Chargement du mur...</span>
                             </div>
                         )}
                     </div>
