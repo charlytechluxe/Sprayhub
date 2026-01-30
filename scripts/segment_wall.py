@@ -27,20 +27,20 @@ def segment_wall_pixel_perfect(image_path, output_json, checkpoint_path):
     sam = sam_model_registry[model_type](checkpoint=checkpoint_path)
     sam.to(device=device)
     
-    # "Paranoiac Ultra-Max" AI Configuration
-    # We increase density (128) to find EVERYTHING.
-    # We tweak thresholds slightly to avoid "cutting" holds too aggressively.
+    # "Paranoiac Separation" AI Configuration
+    # PROBLEM: Adjacent holds merging.
+    # SOLUTION: Deep Cropping (Layers=2) + Stricter Quality (0.88)
     mask_generator = SamAutomaticMaskGenerator(
         model=sam,
-        points_per_side=128, # EXTREME density grid (was 80)
-        pred_iou_thresh=0.86, # High quality (was 0.85)
-        stability_score_thresh=0.92, # Stability (was 0.92)
-        crop_n_layers=1, # Add zooming to catch small holds better
+        points_per_side=144, # Even higher density
+        pred_iou_thresh=0.88, # Stricter to force separation
+        stability_score_thresh=0.94, # Very stable masks only
+        crop_n_layers=2, # DOUBLE ZOOM: Critical for separating close holds
         crop_n_points_downscale_factor=2,
-        min_mask_region_area=10, # Ignore pure noise
+        min_mask_region_area=15, # Ignore small noise
     )
 
-    print("AI IS SCANNING EVERY PIXEL... (Paranoiac Ultra-Max Mode)")
+    print("AI IS SCANNING WITH DEEP ZOOM LAYERS... (Separation Mode)")
     masks = mask_generator.generate(image_rgb)
     
     holds_data = []
