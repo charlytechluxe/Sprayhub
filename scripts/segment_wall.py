@@ -20,8 +20,8 @@ def segment_wall_pro(image_path, output_json, checkpoint_path):
     h, w = image.shape[:2]
 
     # Initialize MobileSAM
-    # Device: use 'cpu' by default for stability, or 'mps' for Mac Silicon
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    # Device: use 'cpu' to avoid MPS float64 issues on some Mac versions
+    device = "cpu" 
     print(f"Using device: {device}")
     
     model_type = "vit_t" # MobileSAM uses vit_t
