@@ -11,7 +11,7 @@
 | :--- | :--- | :--- | :--- |
 | **Architecture** | Ecosystem | ✅ Done | Reorganized into `apps/client-pwa` and `apps/admin-hub` |
 | **Database Schema** | Backend | ✅ Done | Polygonal Pro structure (JSONB) implemented |
-| **Instance Segmentation** | Backend | ✅ Pixel-Perfect | SAM 2 Core + MobileSAM (80x80 Grid, High Fidelity) |
+| **Instance Segmentation** | Backend | ✅ Mission Perfect | SAM 2 Logic + Zero Simplification + Paranoiac Thresholds |
 | **Supabase Integration** | Ecosystem | ✅ Active | Credentials configured and .env files set |
 | **Admin Hub (Native)** | Admin | 🚧 Dev | Electron project initialized with Sidebar & Dashboard |
 | **Wall Management** | Admin | 🔄 In Progress | UI started, logic for 4K upload pending |
@@ -19,8 +19,8 @@
 | **Gym Config** | Admin | ⏳ Pending | Custom grades & hold types |
 | **Training Folders** | Admin | ⏳ Pending | Per-user training assignment |
 | **Intégration Photo & Canvas** | Client | ✅ Done | HD Wall integrated, percentage coords, Zoom & Pan calibrated |
-| **Canvas HD** | Client | ✅ Done | Zoom/Pan + Tactile hit areas + Annotations |
-| **Annotations** | Client | ✅ Done | Display integrated into canvas |
+| **Canvas HD** | Client | ✅ Done | Wireframe Pro (1px) + Neon Glow + Transparent Fill |
+| **Annotations** | Client | ✅ Done | High-fidelity SVG Paths tracked per pixel |
 | **Community** | Client | ⏳ Pending | Library, Filters, Likes, Logbook |
 | **Auto-Grading** | Client | 🔄 In Progress | Voting UI added to RoutesPage |
 | **Sponsoring** | Client | ✅ Done | Partner logo slot on HomePage |
