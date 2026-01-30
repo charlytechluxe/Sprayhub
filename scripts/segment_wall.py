@@ -29,12 +29,12 @@ def segment_wall(image_path, output_json, weight_path):
 
     mask_generator = SamAutomaticMaskGenerator(
         model=sam,
-        points_per_side=32,
-        pred_iou_thresh=0.88,
-        stability_score_thresh=0.95,
+        points_per_side=48, # Increased density for micro-holds
+        pred_iou_thresh=0.80, # Lowered from 0.88 to capture more "doubtful" holds
+        stability_score_thresh=0.90, # Lowered from 0.95
         crop_n_layers=1,
         crop_n_points_downscale_factor=2,
-        min_mask_region_area=100,  # Filter out tiny noise
+        min_mask_region_area=20,  # Lowered to capture tiny feet
     )
 
     print("Generation des masques (Deep Learning in progress)...")
@@ -53,8 +53,8 @@ def segment_wall(image_path, output_json, weight_path):
         # Take the largest contour for this instance
         c = max(contours, key=cv2.contourArea)
         
-        # Simplify polygon (Douglas-Peucker) - precision 1.5px
-        epsilon = 0.002 * cv2.arcLength(c, True)
+        # Simplify polygon (Douglas-Peucker) - precision 0.5px (TIGHTER FIT)
+        epsilon = 0.0008 * cv2.arcLength(c, True) # Reduced from 0.002
         approx = cv2.approxPolyDP(c, epsilon, True)
         
         # Normalize coordinates to %

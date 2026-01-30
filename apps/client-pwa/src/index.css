@@ -67,36 +67,6 @@
   background: #444;
 }
 
-/* Neon Hold Effects */
-.hold-neon-start {
-  filter: drop-shadow(0 0 12px rgba(164, 198, 57, 0.8));
-  stroke: #A4C639;
-  stroke-width: 3;
-}
-
-.hold-neon-handfoot {
-  filter: drop-shadow(0 0 12px rgba(50, 169, 214, 0.8));
-  stroke: #32A9D6;
-  stroke-width: 3;
-}
-
-.hold-neon-foot {
-  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.8));
-  stroke: #FFD700;
-  stroke-width: 3;
-}
-
-.hold-neon-top {
-  filter: drop-shadow(0 0 12px rgba(251, 32, 86, 0.8));
-  stroke: #FB2056;
-  stroke-width: 3;
-}
-
-.hold-poly-base {
-  fill: transparent;
-  transition: all 0.2s ease-in-out;
-}
-
-.hold-poly-base:hover {
-  fill: rgba(255, 255, 255, 0.1);
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
 }
