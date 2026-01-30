@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import SEGMENTED_HOLDS from '../data/holds_segmentation.json';
 
 const TYPE_COLORS = {
     start: '#A4C639',    // Art de la Grimpe Lime Green
@@ -11,43 +12,42 @@ const TYPE_COLORS = {
 const TYPE_CYCLE = ['start', 'handfoot', 'foot', 'top', 'none'];
 
 export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateHold, onRemoveHold, isEditable = false }) {
-    const [activeHoldId, setActiveHoldId] = useState(null);
 
-    const handleCanvasClick = (e) => {
-        if (!isEditable) return;
-
-        // Get coordinates relative to the SVG container
-        const svg = e.currentTarget;
-        const rect = svg.getBoundingClientRect();
-
-        // Calculate click position as percentage of width/height
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        if (onAddHold) {
-            const newHold = {
-                id: Math.random().toString(36).substr(2, 9),
-                x,
-                y,
-                type: 'handfoot',
-                note: ''
-            };
-            onAddHold(newHold);
-        }
+    // Find if a polygon is already selected in the route
+    const getHoldForPolygon = (polygonId) => {
+        return holds.find(h => h.id === polygonId);
     };
 
-    const handleHoldClick = (e, hold) => {
+    const handlePolygonClick = (e, polygon) => {
         e.stopPropagation();
         if (!isEditable) return;
 
-        const currentIndex = TYPE_CYCLE.indexOf(hold.type);
-        const nextIndex = (currentIndex + 1) % TYPE_CYCLE.length;
-        const nextType = TYPE_CYCLE[nextIndex];
+        const existingHold = getHoldForPolygon(polygon.id);
 
-        if (nextType === 'none') {
-            onRemoveHold(hold.id);
+        if (!existingHold) {
+            // Add new hold using polygon center approx
+            const centerX = polygon.contour.reduce((sum, p) => sum + p[0], 0) / polygon.contour.length;
+            const centerY = polygon.contour.reduce((sum, p) => sum + p[1], 0) / polygon.contour.length;
+
+            onAddHold({
+                id: polygon.id,
+                x: centerX * 100,
+                y: centerY * 100,
+                type: 'handfoot',
+                note: '',
+                contour: polygon.contour
+            });
         } else {
-            onUpdateHold(hold.id, { ...hold, type: nextType });
+            // Cycle type
+            const currentIndex = TYPE_CYCLE.indexOf(existingHold.type);
+            const nextIndex = (currentIndex + 1) % TYPE_CYCLE.length;
+            const nextType = TYPE_CYCLE[nextIndex];
+
+            if (nextType === 'none') {
+                onRemoveHold(existingHold.id);
+            } else {
+                onUpdateHold(existingHold.id, { ...existingHold, type: nextType });
+            }
         }
     };
 
@@ -55,10 +55,10 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
         <div className="relative w-full h-full bg-black overflow-hidden rounded-3xl">
             <TransformWrapper
                 initialScale={1}
-                minScale={0.5}
+                minScale={1}
                 maxScale={10}
                 centerOnInit
-                limitToBounds={false}
+                limitToBounds={true}
             >
                 <TransformComponent wrapperClassName="!w-full !h-full" contentClassName="!w-full !h-full">
                     <div className="relative w-full h-full flex items-center justify-center">
@@ -67,67 +67,73 @@ export default function SprayCanvas({ imageUrl, holds = [], onAddHold, onUpdateH
                                 <img
                                     src={imageUrl}
                                     alt="Wall"
-                                    className="w-full h-full object-cover select-none pointer-events-none"
+                                    className="w-full h-full object-cover select-none pointer-events-none opacity-80"
                                 />
                                 <svg
+                                    viewBox="0 0 100 133.33" // Coordinate system 0-100 on X, proportional on Y
                                     className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
-                                    onClick={handleCanvasClick}
                                 >
-                                    {holds.map((hold) => (
-                                        <g
-                                            key={hold.id}
-                                            onClick={(e) => handleHoldClick(e, hold)}
-                                            className="cursor-pointer transition-transform active:scale-125"
-                                        >
-                                            {/* Invisible bigger hit area for touch */}
-                                            <circle
-                                                cx={`${hold.x}%`}
-                                                cy={`${hold.y}%`}
-                                                r="24"
-                                                fill="transparent"
-                                                className="pointer-events-auto"
-                                            />
+                                    {/* Render all detected polygons as interactive zones */}
+                                    {SEGMENTED_HOLDS.map((poly) => {
+                                        const hold = getHoldForPolygon(poly.id);
+                                        const points = poly.contour.map(p => `${p[0] * 100},${p[1] * 133.33}`).join(' ');
 
-                                            <circle
-                                                cx={`${hold.x}%`}
-                                                cy={`${hold.y}%`}
-                                                r="12"
-                                                fill="transparent"
-                                                stroke={TYPE_COLORS[hold.type]}
-                                                strokeWidth="3"
-                                                className="drop-shadow-[0_0_8px_rgba(0,0,0,0.5)]"
-                                            />
-                                            {hold.type === 'start' && (
-                                                <circle cx={`${hold.x}%`} cy={`${hold.y}%`} r="16" fill="transparent" stroke={TYPE_COLORS.start} strokeWidth="1" strokeDasharray="4 2" />
-                                            )}
-                                            {hold.type === 'top' && (
-                                                <circle cx={`${hold.x}%`} cy={`${hold.y}%`} r="16" fill="transparent" stroke={TYPE_COLORS.top} strokeWidth="1" strokeDasharray="4 2" />
-                                            )}
+                                        return (
+                                            <g key={poly.id}>
+                                                <polygon
+                                                    points={points}
+                                                    onClick={(e) => handlePolygonClick(e, poly)}
+                                                    className={hold
+                                                        ? `hold-neon-${hold.type} cursor-pointer`
+                                                        : "hold-poly-base cursor-pointer opacity-20 hover:opacity-50"
+                                                    }
+                                                    fill={hold ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.2)"}
+                                                    fillOpacity={hold ? 0.4 : 0.1}
+                                                />
 
-                                            {/* Annotation/Note Display */}
-                                            {hold.note && (
-                                                <g transform={`translate(0, 20)`}>
-                                                    <rect
-                                                        x={`${hold.x}%`}
-                                                        y={`${hold.y}%`}
-                                                        width="auto"
-                                                        height="14"
-                                                        rx="4"
-                                                        fill="rgba(0,0,0,0.6)"
-                                                        className="backdrop-blur-sm"
+                                                {/* Start/Top Indicators */}
+                                                {hold?.type === 'start' && (
+                                                    <circle
+                                                        cx={hold.x}
+                                                        cy={hold.y * 1.3333}
+                                                        r="2"
+                                                        fill="none"
+                                                        stroke={TYPE_COLORS.start}
+                                                        strokeWidth="0.5"
+                                                        strokeDasharray="1 0.5"
                                                     />
-                                                    <text
-                                                        x={`${hold.x}%`}
-                                                        y={`${hold.y + 3}%`}
-                                                        className="fill-white text-[8px] font-bold"
-                                                        textAnchor="middle"
-                                                    >
-                                                        {hold.note}
-                                                    </text>
-                                                </g>
-                                            )}
-                                        </g>
-                                    ))}
+                                                )}
+                                                {hold?.type === 'top' && (
+                                                    <circle
+                                                        cx={hold.x}
+                                                        cy={hold.y * 1.3333}
+                                                        r="2"
+                                                        fill="none"
+                                                        stroke={TYPE_COLORS.top}
+                                                        strokeWidth="0.5"
+                                                        strokeDasharray="1 0.5"
+                                                    />
+                                                )}
+
+                                                {/* Note Display */}
+                                                {hold?.note && (
+                                                    <g transform={`translate(${hold.x}, ${hold.y * 1.3333 + 4})`}>
+                                                        <rect
+                                                            x="-5" y="-2" width="10" height="4" rx="1"
+                                                            fill="rgba(0,0,0,0.8)"
+                                                        />
+                                                        <text
+                                                            className="fill-white text-[2px] font-bold"
+                                                            textAnchor="middle"
+                                                            dominantBaseline="middle"
+                                                        >
+                                                            {hold.note}
+                                                        </text>
+                                                    </g>
+                                                )}
+                                            </g>
+                                        );
+                                    })}
                                 </svg>
                             </div>
                         ) : (
