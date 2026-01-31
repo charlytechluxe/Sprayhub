@@ -81,6 +81,8 @@ export default function AuthPage() {
 
                 {/* Social Login Buttons */}
                 <div className="flex flex-col gap-3">
+                    {/* Apple Login - Disabled (Requires Paid Account) */}
+                    {/*
                     <button
                         onClick={() => handleSocialLogin('apple')}
                         disabled={loading}
@@ -89,6 +91,7 @@ export default function AuthPage() {
                         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.74 1.18 0 2.21-.82 3.8-.73 2.07.13 3.44 1.18 4.29 2.53-1.45.89-2.02 2.67-1.43 4.45.9 2.72 3.63 3.33 3.63 3.33-.03.11-.53 1.73-1.37 3.05zm-4.48-15c.67-.84.97-1.99.78-3.11-1.29.07-2.61.88-3.3 2.01-.62.98-.81 2.16-.62 3.01 1.48.09 2.65-.83 3.14-1.91z" /></svg>
                         Continuer avec Apple
                     </button>
+                    */}
 
                     <button
                         onClick={() => handleSocialLogin('google')}
