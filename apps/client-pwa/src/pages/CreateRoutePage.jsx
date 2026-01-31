@@ -44,14 +44,49 @@ export default function CreateRoutePage() {
         }
         setIsSaving(true);
 
-        // In a real app, we would get the actual wall_id and author_id
         try {
-            // Logic would go here
-            console.log('Saving route:', { name, grade, holds });
-            alert("Bloc créé ! (Simulation)");
+            if (!supabase) {
+                // Fallback: Mode simulation si pas de Supabase configuré
+                console.log('Saving route (Demo):', { name, grade, holds });
+                await new Promise(r => setTimeout(r, 800)); // Fake network delay
+                alert("Mode Démo: Bloc pseudo-sauvegardé !");
+                navigate('/routes');
+                return;
+            }
+
+            // 1. Récupérer l'ID du mur (on suppose qu'il n'y en a qu'un pour l'instant)
+            const { data: walls, error: wallError } = await supabase
+                .from('walls')
+                .select('id')
+                .limit(1);
+
+            if (wallError) throw wallError;
+            if (!walls || walls.length === 0) {
+                // Si pas de mur, on en crée un par défaut (cas extrême) ou on erreur
+                throw new Error("Impossible de trouver le Mur principal.");
+            }
+
+            const wallId = walls[0].id;
+
+            // 2. Insérer le bloc
+            const { error: insertError } = await supabase
+                .from('routes')
+                .insert({
+                    name,
+                    grade,
+                    holds, // Le tableau JSON des prises sélectionnées
+                    wall_id: wallId,
+                    // author_id: ... (On gérera l'auth plus tard)
+                });
+
+            if (insertError) throw insertError;
+
+            // Succès
             navigate('/routes');
+
         } catch (error) {
-            console.error(error);
+            console.error("Erreur lors de la sauvegarde:", error);
+            alert(`Erreur de sauvegarde: ${error.message}`);
         } finally {
             setIsSaving(false);
         }

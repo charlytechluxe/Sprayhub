@@ -32,12 +32,12 @@ def segment_wall_pixel_perfect(image_path, output_json, checkpoint_path):
     # SOLUTION: Deep Cropping (Layers=2) + Stricter Quality (0.88)
     mask_generator = SamAutomaticMaskGenerator(
         model=sam,
-        points_per_side=144, # Even higher density
-        pred_iou_thresh=0.88, # Stricter to force separation
-        stability_score_thresh=0.94, # Very stable masks only
-        crop_n_layers=2, # DOUBLE ZOOM: Critical for separating close holds
-        crop_n_points_downscale_factor=2,
-        min_mask_region_area=15, # Ignore small noise
+        points_per_side=64, # Optimized for Mac CPU (Speed Mode)
+        pred_iou_thresh=0.86,
+        stability_score_thresh=0.92,
+        crop_n_layers=0, # Disable deep crop to save massive compute
+        crop_n_points_downscale_factor=1,
+        min_mask_region_area=100, # Ignore tiny specks
     )
 
     print("AI IS SCANNING WITH DEEP ZOOM LAYERS... (Separation Mode)")
