@@ -16,10 +16,27 @@ function cn(...inputs) {
 import { supabase } from './lib/supabase';
 import { useEffect, useState } from 'react';
 
+import AuthPage from './pages/AuthPage';
+import ProfilePage from './pages/ProfilePage'; // New Import
+import { useNavigate } from 'react-router-dom';
+
 const HomePage = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({ totalRoutes: 0 });
     const [featuredRoute, setFeaturedRoute] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Initial Auth Check
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                // FORCE AUTH ON FIRST LAUNCH
+                navigate('/auth');
+            }
+        };
+        checkAuth();
+    }, [navigate]);
 
     useEffect(() => {
         async function fetchData() {
@@ -106,49 +123,6 @@ const HomePage = () => {
                     </div>
                 </div>
                 <ChevronRight size={16} className="text-zinc-600" />
-            </div>
-        </div>
-    );
-};
-
-import AuthPage from './pages/AuthPage';
-import { useNavigate } from 'react-router-dom'; // Ensure hook is imported if not already top-level
-
-const ProfilePage = () => {
-    const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) {
-                navigate('/auth');
-            } else {
-                setUser(session.user);
-            }
-        });
-    }, [navigate]);
-
-    if (!user) return null;
-
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-black mb-8 text-zinc-700 uppercase tracking-tighter">Mon Profil</h1>
-            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-6">
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 bg-accent-pink rounded-full flex items-center justify-center text-2xl font-bold">
-                        {user.email[0].toUpperCase()}
-                    </div>
-                    <div>
-                        <p className="text-white font-bold text-lg">{user.email}</p>
-                        <p className="text-zinc-500 text-xs">Membre depuis 2026</p>
-                    </div>
-                </div>
-                <button
-                    onClick={() => supabase.auth.signOut().then(() => navigate('/auth'))}
-                    className="w-full h-12 bg-zinc-800 rounded-xl font-bold text-white hover:bg-zinc-700 transition-colors"
-                >
-                    Se déconnecter
-                </button>
             </div>
         </div>
     );
