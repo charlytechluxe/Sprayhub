@@ -17,10 +17,10 @@ export async function segmentWallImage(imageUrl: string) {
             {
                 input: {
                     image: imageUrl,
-                    points_per_side: 128,
-                    pred_iou_thresh: 0.70,
-                    stability_score_thresh: 0.70,
-                    min_mask_region_area: 50,
+                    points_per_side: 256,        // Increased for better coverage
+                    pred_iou_thresh: 0.65,       // Slightly lowered for small holds
+                    stability_score_thresh: 0.65, // Slightly lowered for small holds
+                    min_mask_region_area: 25,    // REDUCED to detect small triangles
                     use_m2m: true,
                 }
             }
