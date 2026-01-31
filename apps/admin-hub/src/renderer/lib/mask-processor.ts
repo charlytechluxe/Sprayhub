@@ -33,11 +33,29 @@ export async function processReplicateOutput(
             const polygon = await extractContourFromMask(maskUrl);
 
             if (polygon && polygon.length > 3) {
+                // Calculate BBox
+                let minX = 1, minY = 1, maxX = 0, maxY = 0;
+                polygon.forEach(([x, y]) => {
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                });
+
+                // Calculate Area (Shoelace formula)
+                let area = 0;
+                for (let i = 0; i < polygon.length; i++) {
+                    const [x1, y1] = polygon[i];
+                    const [x2, y2] = polygon[(i + 1) % polygon.length];
+                    area += (x1 * y2 - x2 * y1);
+                }
+                const areaNorm = Math.abs(area) / 2;
+
                 processedHolds.push({
-                    id: `hold_cloud_${index}`,
+                    id: `hold_cloud_${index}_${Date.now()}`,
                     contour: polygon,
-                    area_px: 0, // Calculated later or ignored
-                    bbox: [0, 0, 0, 0], // Calculated later or ignored
+                    area_px: areaNorm,
+                    bbox: [minX, minY, maxX - minX, maxY - minY],
                     score: item.predicted_iou || item.stability_score || 0
                 });
             }
