@@ -281,8 +281,15 @@ function ModerationView() {
     );
 }
 
+// ... imports
+import { segmentWallImage } from './lib/replicate';
+
+// ... existing code ...
+
 function WallView() {
     const [wall, setWall] = useState<any>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchWall() {
@@ -290,7 +297,6 @@ function WallView() {
             if (data) {
                 setWall(data);
             } else {
-                // Fallback: If DB is empty, show the default wall used by PWA
                 setWall({
                     name: 'Mur Principal (PWA Default)',
                     image_url: 'http://localhost:5173/wall_v1.jpg',
@@ -301,6 +307,55 @@ function WallView() {
         fetchWall();
     }, []);
 
+    const handleScan = async () => {
+        if (!wall?.image_url) return;
+
+        setIsScanning(true);
+        setScanResult(null);
+        try {
+            // 1. Trigger Cloud AI & Local Vectorization
+            const polygons = await segmentWallImage(wall.image_url);
+
+            if (!polygons || polygons.length === 0) {
+                throw new Error("Aucune prise détectée par l'IA.");
+            }
+
+            // 2. Save to Supabase
+            // First, clear existing holds for this wall (optional, depends on workflow)
+            // For now we append or replace? Let's assume we replace for a fresh scan.
+            const { error: deleteError } = await supabase.from('holds').delete().eq('wall_id', wall.id);
+
+            if (deleteError) {
+                console.warn("Could not clear old holds", deleteError);
+            }
+
+            // Transform for DB (snake_case)
+            const dbHolds = polygons.map((p: any) => ({
+                wall_id: wall.id,
+                contour: p.contour, // JSONB
+                area_px: p.area_px,
+                x: p.bbox[0], // approximate center or box
+                y: p.bbox[1]
+            }));
+
+            // Insert in chunks to avoid payload limits
+            const chunkSize = 100;
+            for (let i = 0; i < dbHolds.length; i += chunkSize) {
+                const chunk = dbHolds.slice(i, i + chunkSize);
+                const { error } = await supabase.from('holds').insert(chunk);
+                if (error) throw error;
+            }
+
+            setScanResult(`✅ Succès ! ${polygons.length} prises détectées et sauvegardées.`);
+
+        } catch (error) {
+            console.error(error);
+            setScanResult("❌ Erreur lors du scan Replicate (Vérifiez la console)");
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -308,7 +363,40 @@ function WallView() {
                     <h3 className="text-lg font-bold">Configuration du Mur</h3>
                     <p className="text-sm text-zinc-500 italic">Image de référence pour l'application.</p>
                 </div>
+                <button
+                    onClick={handleScan}
+                    disabled={isScanning || !wall?.image_url}
+                    className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                        isScanning
+                            ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                            : "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20"
+                    )}
+                >
+                    {isScanning ? (
+                        <>
+                            <RefreshCw size={16} className="animate-spin" />
+                            Scan en cours...
+                        </>
+                    ) : (
+                        <>
+                            <Award size={16} /> {/* Using Award as a 'Magic' icon placeholder */}
+                            Scanner avec l'IA (Cloud)
+                        </>
+                    )}
+                </button>
             </div>
+
+            {scanResult && (
+                <div className={cn(
+                    "p-4 rounded-xl text-sm font-bold border",
+                    scanResult.includes('✅')
+                        ? "bg-green-500/10 text-green-500 border-green-500/20"
+                        : "bg-red-500/10 text-red-500 border-red-500/20"
+                )}>
+                    {scanResult}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-zinc-900/30 rounded-3xl p-6 border-2 border-rose-500/50 flex flex-col gap-4 relative overflow-hidden">
