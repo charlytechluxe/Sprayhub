@@ -160,8 +160,18 @@ async function runAutoAnalysis() {
         return { minX, maxX, minY, maxY };
     };
 
+    // Get Centroid of a polygon
+    const getCentroid = (coords) => {
+        let x = 0, y = 0, n = coords.length;
+        for (let p of coords) {
+            x += p[0];
+            y += p[1];
+        }
+        return [x / n, y / n];
+    };
+
     const removeNestedPolygons = (polygons) => {
-        console.log(`🧹 Démarrage du nettoyage PROFOND des inclusions...`);
+        console.log(`🧹 Démarrage du nettoyage AGRESSIF des inclusions...`);
 
         // Pre-calculate BBoxes and Areas
         let candidates = polygons.map(p => {
@@ -171,6 +181,7 @@ async function runAutoAnalysis() {
                 coords: coords,
                 area: getPolygonArea(coords),
                 bbox: getBBox(coords),
+                centroid: getCentroid(coords),
                 keep: true
             };
         });
@@ -180,9 +191,8 @@ async function runAutoAnalysis() {
 
         let removedCount = 0;
 
-        // Strict threshold: If 80% of the small polygon is inside the big one, we KILL it.
-        // This handles cases where it slightly bleeds out due to detection noise.
-        const COVERAGE_THRESHOLD = 0.80;
+        // AGGRESSIVE THRESHOLDS
+        const COVERAGE_THRESHOLD = 0.50; // Just 50% overlap is enough to suspect duplicate
 
         for (let i = 0; i < candidates.length; i++) {
             if (!candidates[i].keep) continue;
@@ -194,17 +204,21 @@ async function runAutoAnalysis() {
 
                 const inner = candidates[j];
 
-                // Logic: A smaller hold shouldn't exist "mostly" inside a bigger one.
+                // CRITERIA 1: Center Inside
+                // If the "heart" of the small hold is inside the big one, it belongs to it.
+                const centerInside = isPointInPolygon(inner.centroid, outer.coords);
+
+                // CRITERIA 2: Coverage Ratio
                 const coverage = getCoverageRatio(inner.coords, outer.coords, outer.bbox);
 
-                if (coverage > COVERAGE_THRESHOLD) {
+                if (centerInside || coverage > COVERAGE_THRESHOLD) {
                     candidates[j].keep = false;
                     removedCount++;
                 }
             }
         }
 
-        console.log(`✨ Nettoyage terminé : ${removedCount} doublons/couches supprimés.`);
+        console.log(`✨ Nettoyage terminé : ${removedCount} doublons persistants supprimés.`);
         return candidates.filter(c => c.keep).map(c => c.original);
     };
 
