@@ -277,7 +277,8 @@ async function runAutoAnalysis() {
         normalized = removeNestedPolygons(normalized);
 
         // 3. Split Logic (Cut fused holds)
-        normalized = splitMergedPolygons(normalized);
+        // 3. Split Logic (Cut fused holds) - DISABLED (Broke valid holds)
+        // normalized = splitMergedPolygons(normalized);
 
         // 4. Final Noise Filter
         validPolygons = normalized.filter(poly => {
