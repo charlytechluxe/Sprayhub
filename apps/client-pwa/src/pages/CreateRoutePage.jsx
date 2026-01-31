@@ -20,6 +20,7 @@ export default function CreateRoutePage() {
     const [name, setName] = useState('');
     const [grade, setGrade] = useState('Projet');
     const [holds, setHolds] = useState([]);
+    const [selectionMode, setSelectionMode] = useState('handfoot');
     const [isSaving, setIsSaving] = useState(false);
 
     // For demo, we use the official HD spraywall photo
@@ -124,10 +125,11 @@ export default function CreateRoutePage() {
                     onUpdateHold={handleUpdateHold}
                     onRemoveHold={handleRemoveHold}
                     isEditable={true}
+                    activeTool={selectionMode}
                 />
             </div>
 
-            {/* Controls Footer */}
+            {/* Footer with Tools */}
             <div className="p-4 bg-zinc-900 border-t border-zinc-800 space-y-4">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
                     {GRADE_COLORS.map((c) => (
@@ -145,14 +147,25 @@ export default function CreateRoutePage() {
                     ))}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium px-1">
-                    <div className="flex gap-4">
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent-green"></span> Start</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent-blue"></span> Main</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent-yellow"></span> Foot</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent-red"></span> Top</span>
-                    </div>
-                    <span>{holds.length} prises</span>
+                <div className="grid grid-cols-4 gap-2">
+                    {[
+                        { id: 'start', label: 'Start', color: 'bg-accent-green', border: 'border-accent-green' },
+                        { id: 'handfoot', label: 'Main', color: 'bg-accent-blue', border: 'border-accent-blue' },
+                        { id: 'foot', label: 'Pied', color: 'bg-accent-yellow', border: 'border-accent-yellow' },
+                        { id: 'top', label: 'Top', color: 'bg-accent-red', border: 'border-accent-red' }
+                    ].map(tool => (
+                        <button
+                            key={tool.id}
+                            onClick={() => setSelectionMode(tool.id)}
+                            className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all ${selectionMode === tool.id
+                                ? `bg-zinc-800 ${tool.border} text-white`
+                                : 'border-transparent text-zinc-500 hover:bg-zinc-800/50'
+                                }`}
+                        >
+                            <span className={`w-3 h-3 rounded-full ${tool.color} mb-1 shadow-[0_0_8px_currentColor]`} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{tool.label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
         </div>

@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge';
 
 import RoutesPage from './pages/RoutesPage';
 import CreateRoutePage from './pages/CreateRoutePage';
+import RouteDetailPage from './pages/RouteDetailPage';
 import PosterPage from './pages/PosterPage';
 
 function cn(...inputs) {
@@ -155,6 +156,7 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/routes" element={<RoutesPage />} />
+                    <Route path="/route/:id" element={<RouteDetailPage />} />
                     <Route path="/create" element={<CreateRoutePage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/poster" element={<PosterPage />} />
