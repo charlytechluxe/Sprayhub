@@ -292,8 +292,8 @@ async function runAutoAnalysis() {
         // 2. De-Nesting
         normalized = removeNestedPolygons(normalized);
 
-        // 3. Smart Color Split
-        normalized = await smartSplit(normalized, image);
+        // 3. Smart Color Split - DISABLED (Too risky without visual feedback)
+        // normalized = await smartSplit(normalized, image);
 
         // 4. Final Noise Filter
         validPolygons = normalized.filter(poly => {
