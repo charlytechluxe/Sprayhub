@@ -150,7 +150,7 @@ export default function PosterPage() {
                             Precision AI • Route Recognition • Community
                         </p>
                         <div className="h-[1px] w-20 bg-zinc-800" />
-                        <p className="text-[7px] text-blue-500 font-bold uppercase tracking-widest">
+                        <p className="text-[7px] text-cyan-400 font-bold uppercase tracking-widest">
                             Product by Charly Tech & Luxe
                         </p>
                     </div>
