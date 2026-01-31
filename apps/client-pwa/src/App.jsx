@@ -111,7 +111,48 @@ const HomePage = () => {
     );
 };
 
-const ProfilePage = () => <div className="p-6 font-bold text-2xl text-zinc-700">Profil Utilisateur</div>;
+import AuthPage from './pages/AuthPage';
+import { useNavigate } from 'react-router-dom'; // Ensure hook is imported if not already top-level
+
+const ProfilePage = () => {
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                navigate('/auth');
+            } else {
+                setUser(session.user);
+            }
+        });
+    }, [navigate]);
+
+    if (!user) return null;
+
+    return (
+        <div className="p-6">
+            <h1 className="text-2xl font-black mb-8 text-zinc-700 uppercase tracking-tighter">Mon Profil</h1>
+            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-6">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 bg-accent-pink rounded-full flex items-center justify-center text-2xl font-bold">
+                        {user.email[0].toUpperCase()}
+                    </div>
+                    <div>
+                        <p className="text-white font-bold text-lg">{user.email}</p>
+                        <p className="text-zinc-500 text-xs">Membre depuis 2026</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => supabase.auth.signOut().then(() => navigate('/auth'))}
+                    className="w-full h-12 bg-zinc-800 rounded-xl font-bold text-white hover:bg-zinc-700 transition-colors"
+                >
+                    Se déconnecter
+                </button>
+            </div>
+        </div>
+    );
+};
 
 const BottomNav = () => {
     const location = useLocation();
@@ -119,6 +160,9 @@ const BottomNav = () => {
 
     // Hide nav on create page to give more space for canvas, and on poster page for printing
     if (location.pathname === '/create' || location.pathname === '/poster') return null;
+
+    // Hide nav on auth page
+    if (location.pathname === '/auth') return null;
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 h-24 bg-black/90 backdrop-blur-2xl border-t border-zinc-900/50 flex items-center justify-around px-8 pb-6 z-50">
@@ -155,6 +199,7 @@ export default function App() {
             <div className="min-h-screen bg-black text-white">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/auth" element={<AuthPage />} />
                     <Route path="/routes" element={<RoutesPage />} />
                     <Route path="/route/:id" element={<RouteDetailPage />} />
                     <Route path="/create" element={<CreateRoutePage />} />
