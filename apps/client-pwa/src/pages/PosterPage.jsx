@@ -146,10 +146,7 @@ export default function PosterPage() {
 
                     {/* FOOTER */}
                     <div className="mt-auto pb-[8%] flex flex-col items-center gap-3 text-center">
-                        <p className="text-[8px] text-zinc-500 tracking-[0.4em] font-medium uppercase font-mono">
-                            Precision AI • Route Recognition • Community
-                        </p>
-                        <div className="h-[1px] w-20 bg-zinc-800" />
+
                         <p className="text-[7px] text-cyan-400 font-bold uppercase tracking-widest">
                             Product by Charly Tech & Luxe
                         </p>
