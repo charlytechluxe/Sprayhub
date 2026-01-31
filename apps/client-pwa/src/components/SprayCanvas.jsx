@@ -25,6 +25,7 @@ export default function SprayCanvas({
 
     const [allHolds, setAllHolds] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     // Fetch ecosystem holds from Supabase
     useEffect(() => {
@@ -140,10 +141,18 @@ export default function SprayCanvas({
                     <div className="relative w-full h-full flex items-center justify-center">
                         {imageUrl ? (
                             <div className="relative w-full aspect-[3/4]">
+                                {!imageLoaded && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
+                                        <div className="w-10 h-10 rounded-full border-2 border-zinc-800 border-t-accent-pink animate-spin" />
+                                    </div>
+                                )}
                                 <img
                                     src={imageUrl}
                                     alt="Spray Wall"
                                     className="w-full h-full object-cover select-none pointer-events-none"
+                                    onLoad={() => setImageLoaded(true)}
+                                    loading="eager"
+                                    style={{ opacity: imageLoaded ? 1 : 0 }}
                                 />
 
                                 <svg
