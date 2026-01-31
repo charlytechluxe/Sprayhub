@@ -30,26 +30,27 @@ export default function SprayCanvas({
     useEffect(() => {
         const fetchHolds = async () => {
             try {
-                // 1. Get Wall ID (assuming single wall for now or passed as prop)
-                const { data: walls } = await supabase.from('walls').select('id').limit(1);
-                if (!walls || walls.length === 0) {
-                    setLoading(false);
-                    return;
-                }
-                const wallId = walls[0].id;
-
-                // 2. Fetch Holds
-                const { data, error } = await supabase
-                    .from('holds')
-                    .select('id, contour, x, y')
-                    .eq('wall_id', wallId);
+                // Fetch Wall with detection_data
+                const { data: walls, error } = await supabase
+                    .from('walls')
+                    .select('id, detection_data')
+                    .limit(1);
 
                 if (error) throw error;
 
-                // Format for render
-                setAllHolds(data || []);
+                if (!walls || walls.length === 0) {
+                    console.log("⚠️  No wall found in database");
+                    setLoading(false);
+                    return;
+                }
+
+                // Extract holds from detection_data JSONB
+                const detectionData = walls[0].detection_data || [];
+                console.log(`✅ Loaded ${detectionData.length} holds from Supabase`);
+
+                setAllHolds(detectionData);
             } catch (err) {
-                console.error("❌ CRITICAL: Holds table missing or fetch error:", err);
+                console.error("❌ Error fetching holds:", err);
             } finally {
                 setLoading(false);
             }
