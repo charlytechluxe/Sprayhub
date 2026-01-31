@@ -123,32 +123,30 @@ async function runAutoAnalysis() {
         return inside;
     };
 
-    // Check if Poly A is inside Poly B
-    const isPolygonInside = (polyA, polyB) => {
-        // 1. Quick BBox Check
-        const bboxA = getBBox(polyA);
-        const bboxB = getBBox(polyB);
+    // --- ROBUST OVERLAP & INCLUSION LOGIC ---
 
-        if (bboxA.minX < bboxB.minX || bboxA.maxX > bboxB.maxX ||
-            bboxA.minY < bboxB.minY || bboxA.maxY > bboxB.maxY) {
-            return false;
+    // Check coverage ratio: How much of Poly A is inside Poly B?
+    // Returns a value between 0.0 and 1.0
+    const getCoverageRatio = (polyA, polyB, bboxB) => {
+        // Optimization: rapid BBox rejection
+        const bboxA = getBBox(polyA);
+        if (bboxA.maxX < bboxB.minX || bboxA.minX > bboxB.maxX ||
+            bboxA.maxY < bboxB.minY || bboxA.minY > bboxB.maxY) {
+            return 0; // No overlap possible
         }
 
-        // 2. Strict Vertex Check (Sampled)
-        // If > 80% of points of A are inside B, we consider it inside.
-        // We assume holds are somewhat convex or simple.
         let pointsInside = 0;
-        const step = Math.max(1, Math.floor(polyA.length / 20)); // Check ~20 points max
-        let checks = 0;
+        // Check ALL vertices for accuracy on small shapes
+        // For larger shapes, we could skip, but let's be thorough.
+        const step = 1;
 
         for (let i = 0; i < polyA.length; i += step) {
-            checks++;
             if (isPointInPolygon(polyA[i], polyB)) {
                 pointsInside++;
             }
         }
 
-        return (pointsInside / checks) > 0.85;
+        return pointsInside / polyA.length;
     };
 
     const getBBox = (coords) => {
@@ -162,26 +160,30 @@ async function runAutoAnalysis() {
         return { minX, maxX, minY, maxY };
     };
 
-    // --- DE-NESTING LOGIC ---
     const removeNestedPolygons = (polygons) => {
-        console.log(`🧹 Démarrage du nettoyage des inclusions (De-Nesting)...`);
-        // Add Area to all for sorting
+        console.log(`🧹 Démarrage du nettoyage PROFOND des inclusions...`);
+
+        // Pre-calculate BBoxes and Areas
         let candidates = polygons.map(p => {
             let coords = p.geometry || p.contour || p;
             return {
                 original: p,
                 coords: coords,
                 area: getPolygonArea(coords),
+                bbox: getBBox(coords),
                 keep: true
             };
         });
 
         // Sort by Area Descending (Largest first)
-        // We want to keep the largest wrapper.
         candidates.sort((a, b) => b.area - a.area);
 
-        // O(N^2) comparison but N is small (<1000) so it's instant.
         let removedCount = 0;
+
+        // Strict threshold: If 80% of the small polygon is inside the big one, we KILL it.
+        // This handles cases where it slightly bleeds out due to detection noise.
+        const COVERAGE_THRESHOLD = 0.80;
+
         for (let i = 0; i < candidates.length; i++) {
             if (!candidates[i].keep) continue;
 
@@ -192,16 +194,17 @@ async function runAutoAnalysis() {
 
                 const inner = candidates[j];
 
-                // If Inner is Inside Outer -> Remove Inner
-                if (isPolygonInside(inner.coords, outer.coords)) {
+                // Logic: A smaller hold shouldn't exist "mostly" inside a bigger one.
+                const coverage = getCoverageRatio(inner.coords, outer.coords, outer.bbox);
+
+                if (coverage > COVERAGE_THRESHOLD) {
                     candidates[j].keep = false;
                     removedCount++;
-                    // console.log(`   ✂️  Supprimé: Petit objet dans grand objet (Area ${inner.area.toFixed(5)} in ${outer.area.toFixed(5)})`);
                 }
             }
         }
 
-        console.log(`✨ Nettoyage terminé : ${removedCount} doublons intérieurs supprimés.`);
+        console.log(`✨ Nettoyage terminé : ${removedCount} doublons/couches supprimés.`);
         return candidates.filter(c => c.keep).map(c => c.original);
     };
 
