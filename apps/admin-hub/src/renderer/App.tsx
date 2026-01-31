@@ -377,11 +377,43 @@ function WallView() {
     };
 
     const handleScan = async () => {
-        if (!wall?.image_url || wall.image_url.startsWith('/') || wall.image_url.includes('localhost')) {
-            setScanResult("⚠️ L'image doit être sur Supabase pour le scan IA.");
-            return;
+        if (!wall?.image_url) return;
+
+        let urlToScan = wall.image_url;
+
+        // If local image, we must upload it first because Replicate needs a public URL
+        if (wall.image_url.startsWith('/') || wall.image_url.includes('localhost')) {
+            console.log("📤 Image locale détectée, upload automatique vers le Cloud avant le scan IA...");
+            setIsUploading(true);
+            setScanResult("☁️ Hébergement temporaire pour l'IA...");
+
+            try {
+                // Fetch the local file as a blob
+                const response = await fetch(wall.image_url);
+                const blob = await response.blob();
+                const file = new File([blob], "wall_auto_fix.jpg", { type: "image/jpeg" });
+
+                const fileName = `wall_scanned_${Date.now()}.jpg`;
+                const { error: uploadError } = await supabase.storage.from('walls').upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage.from('walls').getPublicUrl(fileName);
+                urlToScan = publicUrl;
+
+                // Update wall URL in DB
+                await supabase.from('walls').update({ image_url: publicUrl }).eq('id', wall.id);
+                setWall({ ...wall, image_url: publicUrl });
+            } catch (err: any) {
+                console.error("Auto-upload failed:", err);
+                setScanResult(`❌ Erreur d'auto-upload: ${err.message}`);
+                setIsUploading(false);
+                return;
+            }
+            setIsUploading(false);
         }
-        handleScanWithUrl(wall.image_url, wall.id);
+
+        handleScanWithUrl(urlToScan, wall.id);
     };
 
     useEffect(() => {
@@ -416,16 +448,16 @@ function WallView() {
                     </label>
                     <button
                         onClick={handleScan}
-                        disabled={isScanning || isUploading || !wall?.image_url || wall?.image_url.startsWith('/')}
+                        disabled={isScanning || isUploading || !wall?.image_url}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                            (isScanning || isUploading || !wall?.image_url || wall?.image_url.startsWith('/'))
+                            (isScanning || isUploading || !wall?.image_url)
                                 ? "bg-zinc-900 text-zinc-600 cursor-not-allowed"
                                 : "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20"
                         )}
                     >
                         {isScanning ? <RefreshCw size={16} className="animate-spin" /> : <Award size={16} />}
-                        {isScanning ? "Scan..." : "Scanner"}
+                        {isScanning ? (isUploading ? "Upload..." : "Scan IA...") : "Lancer Scan Correctif"}
                     </button>
                 </div>
             </div>
