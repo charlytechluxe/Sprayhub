@@ -134,13 +134,13 @@ export default function PosterPage() {
                         <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] border-yellow-400 rounded-br-lg translate-x-2 translate-y-2"></div>
 
                         {/* White Card */}
-                        <div className="relative bg-white w-48 h-48 sm:w-64 sm:h-64 rounded-xl flex flex-col items-center justify-center p-4 shadow-2xl">
-                            {/* FAKE QR PATTERN */}
-                            <div className="w-full h-full border-2 border-dashed border-zinc-200 rounded flex flex-col items-center justify-center bg-zinc-50">
-                                <ScanLine size={40} className="text-zinc-300 mb-2" />
-                                <span className="text-2xl font-light text-zinc-900 tracking-[0.2em] uppercase">Qr</span>
-                                <span className="text-[10px] text-zinc-400 font-bold uppercase mt-1">Scanner ici</span>
-                            </div>
+                        <div className="relative bg-white w-48 h-48 sm:w-64 sm:h-64 rounded-xl flex flex-col items-center justify-center p-2 shadow-2xl overflow-hidden">
+                            {/* ACTUAL QR IMAGE */}
+                            <img
+                                src="/app-qrcode.png"
+                                alt="Scan to Climb"
+                                className="w-full h-full object-contain mix-blend-multiply"
+                            />
                         </div>
                     </div>
 
