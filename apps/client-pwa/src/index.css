@@ -1,36 +1,36 @@
-/* SprayHub Premium CSS - v2.0 */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-    :root {
-        --color-accent-pink: #FB2056;
-        --color-accent-blue: #32A9D6;
-        --color-accent-green: #A4C639;
-        --color-accent-yellow: #FFD700;
-    }
+@theme {
+    --color-background: #0a0a0a;
+    --color-foreground: #ffffff;
+
+    --color-accent-pink: #FB2056;
+    --color-accent-blue: #32A9D6;
+    --color-accent-green: #A4C639;
+    --color-accent-yellow: #FFD700;
+    --color-accent-red: #FB2056;
+
+    --color-grimpe-pink: #FB2056;
+    --color-grimpe-blue: #32A9D6;
+    --color-grimpe-dark: #222222;
 }
 
 body {
     background-color: #000000;
     color: #ffffff;
-    /* Prevent Pull-to-Refresh on Mobile */
     overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
 }
 
-@layer components {
-    .btn-touch {
-        @apply active:scale-95 transition-transform select-none;
-    }
+.btn-touch {
+    @apply active:scale-95 transition-transform select-none;
+}
 
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
 
-    .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
