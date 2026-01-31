@@ -68,31 +68,62 @@ export default function SprayCanvas({
         return map;
     }, [holds]);
 
+    // Interaction Logic
+    const [longPressTimer, setLongPressTimer] = useState(null);
+    const [isLongPress, setIsLongPress] = useState(false);
+
+    // Color Cycle Order: Blue (Hand) -> Yellow (Foot) -> Green (Start) -> Red (Top)
+    const CYCLE_ORDER = ['handfoot', 'foot', 'start', 'top'];
+
+    const handleTouchStart = (e, polygon) => {
+        setIsLongPress(false);
+        const timer = setTimeout(() => {
+            setIsLongPress(true);
+            handleLongPress(polygon);
+        }, 500); // 500ms for long press
+        setLongPressTimer(timer);
+    };
+
+    const handleTouchEnd = (e, polygon) => {
+        if (longPressTimer) clearTimeout(longPressTimer);
+    };
+
+    const handleLongPress = (polygon) => {
+        if (selectedHoldsMap[polygon.id]) {
+            // Vibro-tactile feedback
+            if (window.navigator.vibrate) window.navigator.vibrate(50);
+            onRemoveHold(polygon.id);
+        }
+    };
+
     const handlePolygonClick = (e, polygon) => {
         e.stopPropagation();
         if (!isEditable) return;
+        if (isLongPress) return; // Ignore click if it was a long press
 
         const existingHold = selectedHoldsMap[polygon.id];
 
         if (!existingHold) {
-            // New selection: Use current Active Tool
-            onAddHold({
+            // New selection: Default to 'handfoot' (Blue)
+            const newHold = {
                 id: polygon.id,
-                x: polygon.x || 0, // Fallback if computed elsewhere
+                x: polygon.x || 0,
                 y: polygon.y || 0,
-                type: activeTool, // <--- MAGIC: Uses the selected tool
+                type: 'handfoot',
                 note: '',
                 contour: polygon.contour
-            });
+            };
+            onAddHold(newHold);
+            // Notify parent to show inspector
+            if (onUpdateHold) onUpdateHold(newHold.id, newHold, true); // true = focused
         } else {
-            // Existing selection management
-            if (existingHold.type !== activeTool) {
-                // Repaint with new tool
-                onUpdateHold(existingHold.id, { ...existingHold, type: activeTool });
-            } else {
-                // Toggle off if same tool
-                onRemoveHold(existingHold.id);
-            }
+            // Existing selection: Cycle Type
+            const currentIndex = CYCLE_ORDER.indexOf(existingHold.type);
+            const nextIndex = (currentIndex + 1) % CYCLE_ORDER.length;
+            const nextType = CYCLE_ORDER[nextIndex];
+
+            const updatedHold = { ...existingHold, type: nextType };
+            onUpdateHold(existingHold.id, updatedHold, true); // true = focused
         }
     };
 
@@ -131,6 +162,8 @@ export default function SprayCanvas({
                                                 key={poly.id}
                                                 points={points}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
+                                                onTouchStart={(e) => handleTouchStart(e, poly)}
+                                                onTouchEnd={(e) => handleTouchEnd(e, poly)}
                                                 className="transition-all duration-100 cursor-pointer"
                                                 fill="transparent"
                                                 pointerEvents="all"

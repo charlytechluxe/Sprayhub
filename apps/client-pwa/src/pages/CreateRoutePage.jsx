@@ -49,57 +49,29 @@ export default function CreateRoutePage() {
         setHolds([...holds, hold]);
     };
 
-    const handleUpdateHold = (id, updatedHold) => {
+    const [activeHoldId, setActiveHoldId] = useState(null);
+
+    // ... (rest of logic) ...
+
+    const handleUpdateHold = (id, updatedHold, shouldFocus = false) => {
         setHolds(holds.map(h => h.id === id ? updatedHold : h));
+        if (shouldFocus) setActiveHoldId(id);
     };
 
     const handleRemoveHold = (id) => {
         setHolds(holds.filter(h => h.id !== id));
+        if (activeHoldId === id) setActiveHoldId(null);
     };
 
-    const handleSave = async () => {
-        if (!name) {
-            alert("Donnez un nom au bloc !");
-            return;
-        }
-        setIsSaving(true);
+    const activeHold = holds.find(h => h.id === activeHoldId);
 
-        try {
-            if (!supabase) {
-                console.log('Saving route (Demo):', { name, grade, holds });
-                await new Promise(r => setTimeout(r, 800));
-                alert("Mode Démo: Bloc pseudo-sauvegardé !");
-                navigate('/routes');
-                return;
-            }
-
-            const wallId = currentWall?.id;
-            if (!wallId) throw new Error("Impossible de trouver le Mur principal.");
-
-            const { error: insertError } = await supabase
-                .from('routes')
-                .insert({
-                    name,
-                    grade,
-                    holds,
-                    wall_id: wallId,
-                });
-
-            if (insertError) throw insertError;
-            navigate('/routes');
-
-        } catch (error) {
-            console.error("Erreur lors de la sauvegarde:", error);
-            alert(`Erreur de sauvegarde: ${error.message}`);
-        } finally {
-            setIsSaving(false);
-        }
-    };
+    // Close inspector when clicking empty space (this needs canvas support, but for now back button works)
+    // Or we can add a 'bg' click handler in the Inspector backdrop.
 
     return (
         <div className="flex flex-col h-screen bg-background">
             {/* Header */}
-            <header className="h-16 flex items-center justify-between px-4 border-b border-zinc-900">
+            <header className="h-16 flex items-center justify-between px-4 border-b border-zinc-900 bg-zinc-950 z-20">
                 <button onClick={() => navigate(-1)} className="btn-touch text-zinc-400">
                     <X size={24} />
                 </button>
@@ -138,44 +110,87 @@ export default function CreateRoutePage() {
                 )}
             </div>
 
-            {/* Footer with Tools */}
-            <div className="p-4 bg-zinc-900 border-t border-zinc-800 space-y-4">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
-                    {GRADE_COLORS.map((c) => (
-                        <button
-                            key={c.name}
-                            onClick={() => setGrade(c.name)}
-                            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold border-2 transition-all ${grade === c.name
-                                ? 'bg-white text-black border-white'
-                                : 'bg-zinc-800 text-zinc-400 border-transparent'
-                                }`}
-                            style={{ color: grade === c.name ? 'black' : c.hex }}
-                        >
-                            {c.name}
-                        </button>
-                    ))}
-                </div>
+            {/* Bottom Bar: Grade Selector or Hold Inspector */}
+            <div className="bg-zinc-900 border-t border-zinc-800 z-30 transition-all duration-300">
 
-                <div className="grid grid-cols-4 gap-2">
-                    {[
-                        { id: 'start', label: 'Start', color: 'bg-accent-green', border: 'border-accent-green' },
-                        { id: 'handfoot', label: 'Main', color: 'bg-accent-blue', border: 'border-accent-blue' },
-                        { id: 'foot', label: 'Pied', color: 'bg-accent-yellow', border: 'border-accent-yellow' },
-                        { id: 'top', label: 'Top', color: 'bg-accent-red', border: 'border-accent-red' }
-                    ].map(tool => (
+                {/* 1. HOLD INSPECTOR (If hold selected) */}
+                {activeHold ? (
+                    <div className="p-4 space-y-4 animate-in slide-in-from-bottom-5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-zinc-400 text-xs uppercase font-bold tracking-widest">
+                                Prise #{activeHold.id.split('_').pop().slice(0, 4)}
+                            </span>
+                            <button
+                                onClick={() => setActiveHoldId(null)}
+                                className="text-zinc-500 hover:text-white"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex gap-4">
+                            {/* Color/Type Indicator (Click to Cycle) */}
+                            <button
+                                onClick={() => {
+                                    // Cycle Type Logic (Duplicate logic, ideally shared)
+                                    const CYCLE_ORDER = ['handfoot', 'foot', 'start', 'top'];
+                                    const currentIndex = CYCLE_ORDER.indexOf(activeHold.type);
+                                    const nextType = CYCLE_ORDER[(currentIndex + 1) % 4];
+                                    handleUpdateHold(activeHold.id, { ...activeHold, type: nextType }, true);
+                                }}
+                                className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center bg-zinc-800 transition-colors ${activeHold.type === 'start' ? 'border-accent-green' :
+                                        activeHold.type === 'handfoot' ? 'border-accent-blue' :
+                                            activeHold.type === 'foot' ? 'border-accent-yellow' : 'border-accent-red'
+                                    }`}
+                            >
+                                <span className={`w-4 h-4 rounded-full ${activeHold.type === 'start' ? 'bg-accent-green' :
+                                        activeHold.type === 'handfoot' ? 'bg-accent-blue' :
+                                            activeHold.type === 'foot' ? 'bg-accent-yellow' : 'bg-accent-red'
+                                    } shadow-[0_0_10px_currentColor]`} />
+                            </button>
+
+                            {/* Comment Input */}
+                            <div className="flex-1 relative">
+                                <input
+                                    type="text"
+                                    placeholder="Ajouter une note (ex: Main gauche)..."
+                                    className="w-full h-14 bg-black/50 border border-zinc-700 rounded-2xl px-4 text-sm text-white outline-none focus:border-zinc-500 transition-colors"
+                                    value={activeHold.note || ''}
+                                    onChange={(e) => handleUpdateHold(activeHold.id, { ...activeHold, note: e.target.value }, true)}
+                                />
+                            </div>
+                        </div>
+
                         <button
-                            key={tool.id}
-                            onClick={() => setSelectionMode(tool.id)}
-                            className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all ${selectionMode === tool.id
-                                ? `bg-zinc-800 ${tool.border} text-white`
-                                : 'border-transparent text-zinc-500 hover:bg-zinc-800/50'
-                                }`}
+                            onClick={() => handleRemoveHold(activeHold.id)}
+                            className="w-full py-3 bg-red-500/10 text-red-500 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-red-500/20 active:scale-95 transition-all"
                         >
-                            <span className={`w-3 h-3 rounded-full ${tool.color} mb-1 shadow-[0_0_8px_currentColor]`} />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">{tool.label}</span>
+                            Supprimer la prise
                         </button>
-                    ))}
-                </div>
+                    </div>
+                ) : (
+                    /* 2. DEFAULT TOOLS (Grade Selector) */
+                    <div className="p-4 space-y-4">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
+                            {GRADE_COLORS.map((c) => (
+                                <button
+                                    key={c.name}
+                                    onClick={() => setGrade(c.name)}
+                                    className={`flex-shrink-0 px-4 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${grade === c.name
+                                        ? 'bg-white text-black border-white scale-105 shadow-lg'
+                                        : 'bg-zinc-800 text-zinc-400 border-transparent'
+                                        }`}
+                                    style={{ color: grade === c.name ? 'black' : c.hex }}
+                                >
+                                    {c.name}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-center text-zinc-500 text-xs font-medium">
+                            Touchez une prise pour modifier sa couleur ou ajouter une note.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );
