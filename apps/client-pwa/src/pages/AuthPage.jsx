@@ -24,7 +24,9 @@ export default function AuthPage() {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: provider,
                 options: {
-                    redirectTo: `${window.location.origin}/profile`, // Mobile friendly redirect
+                    // Force redirect to Vercel production app to avoid localhost issues
+                    // This handles cases where Supabase Site URL might still be set to localhost
+                    redirectTo: 'https://sprayhub.vercel.app/profile',
                 },
             });
             if (error) throw error;
