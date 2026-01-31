@@ -23,13 +23,44 @@ export default function RoutesPage() {
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('routes')
+                // Try fetching from the stats view first
+                let { data, error } = await supabase
+                    .from('routes_with_stats')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (error) throw error;
-                setRoutes(data || []);
+                // Fallback if view doesn't exist yet
+                if (error) {
+                    console.warn("View 'routes_with_stats' not found, falling back to basic table.");
+                    const { data: basicData, error: basicError } = await supabase
+                        .from('routes')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    if (basicError) throw basicError;
+                    data = basicData;
+                }
+
+                // Fetch User Interactions (Likes & Ascents) so we can highlight them
+                const { data: { user } } = await supabase.auth.getUser();
+                let userAppreciations = [];
+                let userAscents = [];
+
+                if (user) {
+                    const { data: likes } = await supabase.from('likes').select('route_id').eq('user_id', user.id);
+                    userAppreciations = likes?.map(l => l.route_id) || [];
+
+                    const { data: ascents } = await supabase.from('ascents').select('route_id').eq('user_id', user.id);
+                    userAscents = ascents?.map(a => a.route_id) || [];
+                }
+
+                // Merge data
+                const enrichedRoutes = data?.map(r => ({
+                    ...r,
+                    isLiked: userAppreciations.includes(r.id),
+                    isSent: userAscents.includes(r.id)
+                })) || [];
+
+                setRoutes(enrichedRoutes);
             } catch (err) {
                 console.error("Error loading routes:", err);
             } finally {
@@ -81,7 +112,12 @@ export default function RoutesPage() {
                                     className="w-3 h-12 rounded-full relative"
                                     style={{ backgroundColor: GRADE_HEX[route.grade] || '#555' }}
                                 >
-                                    {/* Pulse for new/project if needed */}
+                                    {/* Tick Indicator */}
+                                    {route.isSent && (
+                                        <div className="absolute -left-1 -top-1 w-5 h-5 bg-green-500 rounded-full border-2 border-black flex items-center justify-center text-black text-[10px] shadow-lg">
+                                            ✓
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="font-bold text-lg text-white">{route.name}</h3>
@@ -96,10 +132,9 @@ export default function RoutesPage() {
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <div className="flex items-center gap-1 text-zinc-400">
-                                        <Heart size={14} className="fill-current" />
-                                        <span className="text-xs font-bold">0</span>
-                                        {/* Likes not yet in DB schema or join? Keeping static 0 for now */}
+                                    <div className={`flex items-center gap-1 ${route.isLiked ? 'text-red-500' : 'text-zinc-400'}`}>
+                                        <Heart size={14} className={route.isLiked ? "fill-current" : ""} />
+                                        <span className="text-xs font-bold">{route.likes_count || 0}</span>
                                     </div>
                                 </div>
                             </div>
