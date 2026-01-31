@@ -17,13 +17,13 @@ export async function segmentWallImage(imageUrl: string) {
             {
                 input: {
                     image: imageUrl,
-                    points_per_side: 256, // ULTRA DENSITY: Nécessaire pour 550+ prises
-                    pred_iou_thresh: 0.82, // Tuning fin pour éviter les doublons mais garder les prises difficiles
-                    stability_score_thresh: 0.85,
-                    crop_n_layers: 1, // Deep Zoom activé pour séparer les prises collées
-                    crop_n_points_downscale_factor: 2,
-                    min_mask_region_area: 50, // Garder même les puces (chips)
-                    use_m2m: true, // Optimisation pour les masques multiples
+                    points_per_side: 128, // PRO BALANCED: 256 is too noisy, 128 is the sweet spot
+                    pred_iou_thresh: 0.70, // PERMISSIVE: Catch bottom holds (shadows)
+                    stability_score_thresh: 0.70,
+                    // crop_n_layers: 0, // SAFETY: No cropping to prevent splitting large holds
+                    // crop_n_points_downscale_factor: 1,
+                    min_mask_region_area: 100, // Filter dust
+                    use_m2m: true,
                 }
             }
         );

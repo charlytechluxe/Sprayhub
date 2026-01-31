@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 import SprayCanvas from '../components/SprayCanvas';
@@ -22,9 +22,26 @@ export default function CreateRoutePage() {
     const [holds, setHolds] = useState([]);
     const [selectionMode, setSelectionMode] = useState('handfoot');
     const [isSaving, setIsSaving] = useState(false);
+    const [currentWall, setCurrentWall] = useState(null);
+    const [loadingWall, setLoadingWall] = useState(true);
 
-    // For demo, we use the official HD spraywall photo
-    const imageUrl = "/wall_v1.jpg";
+    useEffect(() => {
+        async function fetchWall() {
+            setLoadingWall(true);
+            try {
+                const { data, error } = await supabase.from('walls').select('*').limit(1).single();
+                if (data) {
+                    setCurrentWall(data);
+                }
+            } catch (err) {
+                console.error("Error fetching wall:", err);
+            }
+            setLoadingWall(false);
+        }
+        fetchWall();
+    }, []);
+
+    const imageUrl = currentWall?.image_url || "/wall_v1.jpg";
 
     const handleAddHold = (hold) => {
         setHolds([...holds, hold]);
@@ -47,42 +64,26 @@ export default function CreateRoutePage() {
 
         try {
             if (!supabase) {
-                // Fallback: Mode simulation si pas de Supabase configuré
                 console.log('Saving route (Demo):', { name, grade, holds });
-                await new Promise(r => setTimeout(r, 800)); // Fake network delay
+                await new Promise(r => setTimeout(r, 800));
                 alert("Mode Démo: Bloc pseudo-sauvegardé !");
                 navigate('/routes');
                 return;
             }
 
-            // 1. Récupérer l'ID du mur (on suppose qu'il n'y en a qu'un pour l'instant)
-            const { data: walls, error: wallError } = await supabase
-                .from('walls')
-                .select('id')
-                .limit(1);
+            const wallId = currentWall?.id;
+            if (!wallId) throw new Error("Impossible de trouver le Mur principal.");
 
-            if (wallError) throw wallError;
-            if (!walls || walls.length === 0) {
-                // Si pas de mur, on en crée un par défaut (cas extrême) ou on erreur
-                throw new Error("Impossible de trouver le Mur principal.");
-            }
-
-            const wallId = walls[0].id;
-
-            // 2. Insérer le bloc
             const { error: insertError } = await supabase
                 .from('routes')
                 .insert({
                     name,
                     grade,
-                    holds, // Le tableau JSON des prises sélectionnées
+                    holds,
                     wall_id: wallId,
-                    // author_id: ... (On gérera l'auth plus tard)
                 });
 
             if (insertError) throw insertError;
-
-            // Succès
             navigate('/routes');
 
         } catch (error) {
@@ -118,15 +119,21 @@ export default function CreateRoutePage() {
 
             {/* Canvas Area */}
             <div className="flex-1 relative overflow-hidden p-4">
-                <SprayCanvas
-                    imageUrl={imageUrl}
-                    holds={holds}
-                    onAddHold={handleAddHold}
-                    onUpdateHold={handleUpdateHold}
-                    onRemoveHold={handleRemoveHold}
-                    isEditable={true}
-                    activeTool={selectionMode}
-                />
+                {loadingWall ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="w-10 h-10 rounded-full border border-zinc-900 border-t-accent-pink animate-spin" />
+                    </div>
+                ) : (
+                    <SprayCanvas
+                        imageUrl={imageUrl}
+                        holds={holds}
+                        onAddHold={handleAddHold}
+                        onUpdateHold={handleUpdateHold}
+                        onRemoveHold={handleRemoveHold}
+                        isEditable={true}
+                        activeTool={selectionMode}
+                    />
+                )}
             </div>
 
             {/* Footer with Tools */}

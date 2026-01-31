@@ -1,27 +1,34 @@
-import { app, BrowserWindow, shell } from 'electron'
+import * as electron from 'electron'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const { app, BrowserWindow, shell } = electron
+
+// Safety: fallback if running in Node check usage
+const isPackaged = app ? app.isPackaged : false
 
 process.env.DIST = path.join(__dirname, '../dist')
-process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
+process.env.VITE_PUBLIC = isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
 
-
-let win: BrowserWindow | null
+let win: any | null
+console.log('Main process starting...')
 
 function createWindow() {
+    console.log('Creating window...')
+    if (!BrowserWindow) {
+        console.error('BrowserWindow is undefined!')
+        return;
+    }
     win = new BrowserWindow({
         icon: path.join(process.env.VITE_PUBLIC || '', 'electron-vite.svg'),
         webPreferences: {
-            preload: path.join(__dirname, 'preload.mjs'),
+            preload: path.join(__dirname, 'preload.cjs'),
+            webSecurity: false, // Fix CORS for Canvas/Replicate Images
         },
-        titleBarStyle: 'hiddenInset', // Better for macOS
+        titleBarStyle: 'hiddenInset',
         width: 1200,
         height: 800,
     })
 
-    // Test active push message to Renderer-process.
     win.webContents.on('did-finish-load', () => {
         win?.webContents.send('main-process-message', (new Date).toLocaleString())
     })
@@ -29,27 +36,23 @@ function createWindow() {
     if (process.env.VITE_DEV_SERVER_URL) {
         win.loadURL(process.env.VITE_DEV_SERVER_URL)
     } else {
-        // win.loadFile('dist/index.html')
         win.loadFile(path.join(process.env.DIST || '', 'index.html'))
     }
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit()
-        win = null
-    }
-})
+if (app) {
+    app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+            app.quit()
+            win = null
+        }
+    })
 
-app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow()
-    }
-})
+    app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+            createWindow()
+        }
+    })
 
-app.whenReady().then(createWindow)
+    app.whenReady().then(createWindow)
+}

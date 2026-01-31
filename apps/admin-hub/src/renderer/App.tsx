@@ -11,10 +11,12 @@ import {
     RefreshCw,
     Check,
     X,
-    Edit
+    Edit,
+    Upload
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
+import { segmentWallImage } from './lib/replicate';
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -195,7 +197,7 @@ function DashboardView() {
     );
 }
 
-function StatsCard({ title, value, change, icon }) {
+function StatsCard({ title, value, change, icon }: { title: string, value: string, change: string, icon: React.ReactNode }) {
     return (
         <div className="bg-zinc-900/30 rounded-3xl p-6 border border-zinc-800">
             <div className="flex items-center justify-between mb-4">
@@ -281,146 +283,206 @@ function ModerationView() {
     );
 }
 
-// ... imports
-import { segmentWallImage } from './lib/replicate';
 
-// ... existing code ...
 
 function WallView() {
     const [wall, setWall] = useState<any>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        setScanResult(null);
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `walls/${fileName}`;
+
+            // 1. Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('images') // Assumes a bucket named 'images' exists
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('images')
+                .getPublicUrl(filePath);
+
+            // 3. Update or Create Wall in DB
+            let currentWallId = wall?.id;
+            if (currentWallId === 'local-default' || !currentWallId) {
+                const { data: newWall, error: insertError } = await supabase
+                    .from('walls')
+                    .insert({ name: 'Mur Principal', image_url: publicUrl })
+                    .select()
+                    .single();
+                if (insertError) throw insertError;
+                currentWallId = newWall.id;
+                setWall(newWall);
+            } else {
+                const { error: updateError } = await supabase
+                    .from('walls')
+                    .update({ image_url: publicUrl })
+                    .eq('id', currentWallId);
+                if (updateError) throw updateError;
+                setWall({ ...wall, image_url: publicUrl });
+            }
+
+            setScanResult("✅ Image téléchargée ! Lancement du scan IA...");
+
+            // 4. Trigger Scan Auto (Needs wall state to be updated, so we pass publicUrl directly)
+            await handleScanWithUrl(publicUrl, currentWallId);
+
+        } catch (error: any) {
+            console.error(error);
+            setScanResult(`❌ Erreur d'upload: ${error.message}`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleScanWithUrl = async (url: string, wallId: string) => {
+        setIsScanning(true);
+        try {
+            const polygons = await segmentWallImage(url);
+            if (!polygons || polygons.length === 0) throw new Error("Aucune prise détectée.");
+
+            await supabase.from('holds').delete().eq('wall_id', wallId);
+            const dbHolds = polygons.map((p: any) => ({
+                wall_id: wallId,
+                contour: p.contour,
+                area_px: p.area_px,
+                x: p.bbox[0],
+                y: p.bbox[1]
+            }));
+
+            const chunkSize = 100;
+            for (let i = 0; i < dbHolds.length; i += chunkSize) {
+                const { error } = await supabase.from('holds').insert(dbHolds.slice(i, i + chunkSize));
+                if (error) throw error;
+            }
+            setScanResult(`✅ Succès ! ${polygons.length} prises détectées.`);
+        } catch (error: any) {
+            setScanResult(`❌ Erreur scan: ${error.message}`);
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    const handleScan = async () => {
+        if (!wall?.image_url || wall.image_url.startsWith('/') || wall.image_url.includes('localhost')) {
+            setScanResult("⚠️ L'image doit être sur Supabase pour le scan IA.");
+            return;
+        }
+        handleScanWithUrl(wall.image_url, wall.id);
+    };
 
     useEffect(() => {
         async function fetchWall() {
             const { data } = await supabase.from('walls').select('*').limit(1).single();
             if (data) {
                 setWall(data);
+                // Auto-scan if no holds
+                const { count } = await supabase.from('holds').select('*', { count: 'exact', head: true }).eq('wall_id', data.id);
+                if (!count && !data.image_url.includes('localhost')) {
+                    handleScanWithUrl(data.image_url, data.id);
+                }
             } else {
-                setWall({
-                    name: 'Mur Principal (PWA Default)',
-                    image_url: 'http://localhost:5173/wall_v1.jpg',
-                    id: 'local-default'
-                });
+                setWall({ name: 'Mur Principal', image_url: '/wall_v1.jpg', id: 'local-default' });
             }
         }
         fetchWall();
     }, []);
-
-    const handleScan = async () => {
-        if (!wall?.image_url) return;
-
-        setIsScanning(true);
-        setScanResult(null);
-        try {
-            // 1. Trigger Cloud AI & Local Vectorization
-            const polygons = await segmentWallImage(wall.image_url);
-
-            if (!polygons || polygons.length === 0) {
-                throw new Error("Aucune prise détectée par l'IA.");
-            }
-
-            // 2. Save to Supabase
-            // First, clear existing holds for this wall (optional, depends on workflow)
-            // For now we append or replace? Let's assume we replace for a fresh scan.
-            const { error: deleteError } = await supabase.from('holds').delete().eq('wall_id', wall.id);
-
-            if (deleteError) {
-                console.warn("Could not clear old holds", deleteError);
-            }
-
-            // Transform for DB (snake_case)
-            const dbHolds = polygons.map((p: any) => ({
-                wall_id: wall.id,
-                contour: p.contour, // JSONB
-                area_px: p.area_px,
-                x: p.bbox[0], // approximate center or box
-                y: p.bbox[1]
-            }));
-
-            // Insert in chunks to avoid payload limits
-            const chunkSize = 100;
-            for (let i = 0; i < dbHolds.length; i += chunkSize) {
-                const chunk = dbHolds.slice(i, i + chunkSize);
-                const { error } = await supabase.from('holds').insert(chunk);
-                if (error) throw error;
-            }
-
-            setScanResult(`✅ Succès ! ${polygons.length} prises détectées et sauvegardées.`);
-
-        } catch (error) {
-            console.error(error);
-            setScanResult("❌ Erreur lors du scan Replicate (Vérifiez la console)");
-        } finally {
-            setIsScanning(false);
-        }
-    };
 
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-bold">Configuration du Mur</h3>
-                    <p className="text-sm text-zinc-500 italic">Image de référence pour l'application.</p>
+                    <p className="text-sm text-zinc-500 italic">Gérez l'image de référence et l'analyse IA.</p>
                 </div>
-                <button
-                    onClick={handleScan}
-                    disabled={isScanning || !wall?.image_url}
-                    className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                        isScanning
-                            ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                            : "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20"
-                    )}
-                >
-                    {isScanning ? (
-                        <>
-                            <RefreshCw size={16} className="animate-spin" />
-                            Scan en cours...
-                        </>
-                    ) : (
-                        <>
-                            <Award size={16} /> {/* Using Award as a 'Magic' icon placeholder */}
-                            Scanner avec l'IA (Cloud)
-                        </>
-                    )}
-                </button>
+                <div className="flex gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-zinc-800 hover:bg-zinc-700 text-white cursor-pointer transition-all border border-zinc-700">
+                        <Upload size={16} />
+                        {isUploading ? "Upload..." : "Changer la photo"}
+                        <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={isUploading} />
+                    </label>
+                    <button
+                        onClick={handleScan}
+                        disabled={isScanning || isUploading || !wall?.image_url || wall?.image_url.startsWith('/')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                            (isScanning || isUploading || !wall?.image_url || wall?.image_url.startsWith('/'))
+                                ? "bg-zinc-900 text-zinc-600 cursor-not-allowed"
+                                : "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20"
+                        )}
+                    >
+                        {isScanning ? <RefreshCw size={16} className="animate-spin" /> : <Award size={16} />}
+                        {isScanning ? "Scan..." : "Scanner"}
+                    </button>
+                </div>
             </div>
 
             {scanResult && (
                 <div className={cn(
-                    "p-4 rounded-xl text-sm font-bold border",
-                    scanResult.includes('✅')
-                        ? "bg-green-500/10 text-green-500 border-green-500/20"
-                        : "bg-red-500/10 text-red-500 border-red-500/20"
+                    "p-4 rounded-xl text-sm font-bold border flex items-center gap-3",
+                    scanResult.includes('✅') ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                        scanResult.includes('⚠️') ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" :
+                            "bg-red-500/10 text-red-500 border-red-500/20"
                 )}>
+                    {scanResult.includes('✅') ? <Check size={18} /> : <X size={18} />}
                     {scanResult}
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-zinc-900/30 rounded-3xl p-6 border-2 border-rose-500/50 flex flex-col gap-4 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 bg-rose-500 text-white text-[10px] font-black px-2 py-1 rounded uppercase">Actif</div>
-                    <div className="aspect-[3/4] rounded-2xl bg-black overflow-hidden flex items-center justify-center relative">
+                <div className="bg-zinc-900/30 rounded-3xl p-6 border border-zinc-800 relative overflow-hidden group">
+                    <div className="aspect-[3/4] rounded-2xl bg-black overflow-hidden flex items-center justify-center relative border border-zinc-800">
                         {wall ? (
                             <img src={wall.image_url} className="w-full h-full object-contain" alt="Mur" />
                         ) : (
-                            <div className="text-zinc-600 flex flex-col items-center">
-                                <ImageIcon size={32} className="mb-2 opacity-50" />
-                                <span className="text-xs">Aucun mur configuré</span>
+                            <ImageIcon size={32} className="text-zinc-800" />
+                        )}
+                        {(isScanning || isUploading) && (
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                                <div className="w-12 h-12 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" />
+                                <p className="text-sm font-black tracking-widest uppercase text-white animate-pulse">
+                                    {isUploading ? "Upload..." : "Analyse IA..."}
+                                </p>
                             </div>
                         )}
                     </div>
-                    <div>
-                        <h4 className="font-bold">{wall ? wall.name : "Mur par défaut"}</h4>
-                        <p className="text-xs text-zinc-500">ID: {wall?.id || "-"}</p>
-                    </div>
                 </div>
 
-                <div className="flex flex-col justify-center gap-4 text-sm text-zinc-400">
-                    <p>Pour changer l'image du mur, veuillez contacter le support technique ou utiliser l'outil de migration.</p>
-                    <div className="bg-yellow-500/10 text-yellow-500 p-4 rounded-xl border border-yellow-500/20">
-                        <strong>Note:</strong> La modification de l'image du mur nécessite de relancer la segmentation IA pour garantir la précision des blocs.
+                <div className="flex flex-col justify-center gap-6">
+                    <div className="bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
+                        <h4 className="font-bold mb-1">{wall?.name || "Sans nom"}</h4>
+                        <p className="text-xs text-zinc-500 font-mono mb-4 break-all">URL: {wall?.image_url}</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
+                                <p className="text-[10px] text-zinc-500 font-black uppercase mb-1">Source</p>
+                                <p className="text-sm font-bold">{wall?.image_url.includes('supabase') ? "Cloud (Supabase)" : "Local / Cache"}</p>
+                            </div>
+                            <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
+                                <p className="text-[10px] text-zinc-500 font-black uppercase mb-1">IA Status</p>
+                                <p className="text-sm font-bold text-green-500">Auto-Ready</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-yellow-500/5 text-yellow-500/80 p-6 rounded-3xl border border-yellow-500/10 text-xs leading-relaxed">
+                        <strong className="block mb-2 text-yellow-500">Flux de travail automatique :</strong>
+                        1. Sélectionnez une nouvelle photo.<br />
+                        2. L'image est automatiquement hébergée sur votre cloud.<br />
+                        3. L'IA SAM 2 détecte instantanément toutes les prises.<br />
+                        4. Les coordonnées sont prêtes pour vos grimpeurs !
                     </div>
                 </div>
             </div>

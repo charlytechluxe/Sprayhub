@@ -6,6 +6,10 @@ import renderer from 'vite-plugin-electron-renderer'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+    server: {
+        port: 5180,
+    },
+    base: './',
     plugins: [
         react(),
         tailwindcss(),
@@ -13,6 +17,16 @@ export default defineConfig({
             {
                 // Main-process entry file of the Electron App.
                 entry: 'src/electron/main.ts',
+                vite: {
+                    build: {
+                        rollupOptions: {
+                            output: {
+                                format: 'cjs',
+                                entryFileNames: '[name].cjs',
+                            },
+                        },
+                    },
+                },
             },
             {
                 entry: 'src/electron/preload.ts',
@@ -20,6 +34,16 @@ export default defineConfig({
                     // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete, 
                     // instead of restarting the entire Electron App.
                     options.reload()
+                },
+                vite: {
+                    build: {
+                        rollupOptions: {
+                            output: {
+                                format: 'cjs',
+                                entryFileNames: '[name].cjs',
+                            },
+                        },
+                    },
                 },
             },
         ]),
