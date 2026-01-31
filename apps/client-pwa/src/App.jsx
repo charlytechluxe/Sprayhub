@@ -167,10 +167,13 @@ const NavLink = ({ icon, label, to, active, primary = false }) => (
     </Link>
 );
 
+import InstallPrompt from './components/InstallPrompt';
+
 export default function App() {
     return (
         <Router>
             <div className="min-h-screen bg-black text-white">
+                <InstallPrompt />
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/auth" element={<AuthPage />} />
