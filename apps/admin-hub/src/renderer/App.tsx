@@ -386,7 +386,7 @@ function WallView() {
 
     useEffect(() => {
         async function fetchWall() {
-            const { data } = await supabase.from('walls').select('*').limit(1).single();
+            const { data } = await supabase.from('walls').select('*').limit(1).maybeSingle();
             if (data) {
                 setWall(data);
                 // Auto-scan if no holds

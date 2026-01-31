@@ -49,7 +49,7 @@ export default function SprayCanvas({
                 // Format for render
                 setAllHolds(data || []);
             } catch (err) {
-                console.error("Error loading holds from Cloud:", err);
+                console.error("❌ CRITICAL: Holds table missing or fetch error:", err);
             } finally {
                 setLoading(false);
             }

@@ -29,9 +29,11 @@ export default function CreateRoutePage() {
         async function fetchWall() {
             setLoadingWall(true);
             try {
-                const { data, error } = await supabase.from('walls').select('*').limit(1).single();
+                const { data, error } = await supabase.from('walls').select('*').limit(1).maybeSingle();
                 if (data) {
                     setCurrentWall(data);
+                } else {
+                    console.log("No wall found in DB, using default.");
                 }
             } catch (err) {
                 console.error("Error fetching wall:", err);
