@@ -253,8 +253,9 @@ async function runAutoAnalysis() {
         return;
     }
 
-    // LOAD IMAGE FOR COLOR ANALYSIS
-    console.log(`� Téléchargement image pour analyse couleur...`);
+    // LOAD IMAGE FOR COLOR ANALYSIS - SKIPPED (Not needed if Smart Split is disabled)
+    /*
+    console.log(` Téléchargement image pour analyse couleur...`);
     let image = null;
     try {
         const imgRes = await fetch(wall.image_url);
@@ -263,8 +264,9 @@ async function runAutoAnalysis() {
         console.log(`✅ Image chargée: ${image.bitmap.width}x${image.bitmap.height}`);
     } catch (e) {
         console.error("❌ Erreur chargement image:", e);
-        return;
+        // return; // Don't abort, just continue without image
     }
+    */
 
     let output = [];
     // Load Simulation Data
