@@ -86,7 +86,7 @@ export default function TrainingLogPage() {
                 .from('ascents')
                 .select(`
                     *,
-                    route:routes(id, name, grade, author)
+                    route:routes(id, name, grade, author_id)
                 `)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
@@ -219,8 +219,6 @@ export default function TrainingLogPage() {
                                     <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-bold uppercase">
                                         <Calendar size={10} />
                                         {new Date(ascent.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                                        <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
-                                        <span>Par {ascent.route?.author || "Inconnu"}</span>
                                     </div>
                                 </div>
                             </div>

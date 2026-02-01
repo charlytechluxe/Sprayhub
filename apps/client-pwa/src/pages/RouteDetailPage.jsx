@@ -206,14 +206,13 @@ export default function RouteDetailPage() {
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-1 text-white drop-shadow-md">{route.name || "Sans nom"}</h1>
-                        <p className="text-zinc-400 text-sm font-medium">Créé par <span className="text-white">{route.author || "Anonyme"}</span></p>
                     </div>
                     {/* Tick Button */}
                     <button
                         onClick={handleSend}
                         className={`px-6 py-3 rounded-2xl font-black uppercase tracking-wider active:scale-95 transition-all flex items-center gap-2 border ${isSent
-                                ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)] border-green-400/20'
-                                : 'bg-accent-pink text-white shadow-[0_0_20px_rgba(255,0,85,0.3)] border-white/10 hover:bg-accent-pink/90'
+                            ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)] border-green-400/20'
+                            : 'bg-accent-pink text-white shadow-[0_0_20px_rgba(255,0,85,0.3)] border-white/10 hover:bg-accent-pink/90'
                             }`}
                     >
                         <CheckCircle size={18} />
