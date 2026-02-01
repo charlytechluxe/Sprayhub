@@ -180,7 +180,7 @@ export default function SprayCanvas({
             >
                 <TransformComponent wrapperClassName="!w-full !h-full" contentClassName="!w-full !h-full">
                     <div className="relative w-full h-full flex items-center justify-center">
-                        {imageUrl ? (
+                        {wallImageUrl ? (
                             <div className="relative w-full aspect-[3/4]">
                                 <img
                                     src={wallImageUrl}
