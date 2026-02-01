@@ -22,8 +22,6 @@ export function TrainingView() {
             if (!error && profiles) {
                 setUsers(profiles);
             } else {
-                // Fallback to auth.users if profiles empty/error (admin only feat)
-                // Actually we rely on profiles table now.
                 console.error("Error fetching profiles:", error);
             }
             setLoading(false);
@@ -155,28 +153,174 @@ export function TrainingView() {
 
 function PlanCard({ plan, onDelete }: { plan: any, onDelete: () => void }) {
     const [items, setItems] = useState<any[]>([]);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isManaging, setIsManaging] = useState(false);
+    const [availableRoutes, setAvailableRoutes] = useState<any[]>([]);
+    const [loadingRoutes, setLoadingRoutes] = useState(false);
 
-    // Fetch items count or listing
+    // Fetch items in this plan
+    useEffect(() => {
+        if (!plan.id) return;
+        fetchItems();
+    }, [plan.id]);
+
+    async function fetchItems() {
+        const { data } = await supabase
+            .from('training_folder_items')
+            .select('*, route:routes(*)')
+            .eq('folder_id', plan.id)
+            .order('added_at', { ascending: true });
+        setItems(data || []);
+    }
+
+    async function openManager() {
+        setIsManaging(true);
+        setLoadingRoutes(true);
+        // Fetch all routes to pick from
+        const { data } = await supabase
+            .from('routes')
+            .select('*')
+            .order('created_at', { ascending: false });
+        setAvailableRoutes(data || []);
+        setLoadingRoutes(false);
+    }
+
+    const handleAddRoute = async (routeId: string) => {
+        // Check if already in plan
+        if (items.find(i => i.route_id === routeId)) return;
+
+        await supabase.from('training_folder_items').insert({
+            folder_id: plan.id,
+            route_id: routeId
+        });
+        fetchItems();
+    };
+
+    const handleRemoveRoute = async (itemId: string) => {
+        await supabase.from('training_folder_items').delete().eq('id', itemId);
+        setItems(items.filter(i => i.id !== itemId));
+    };
+
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 transition-colors group relative">
-            <button
-                onClick={onDelete}
-                className="absolute top-2 right-2 p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-            >
-                <Trash2 size={14} />
-            </button>
-            <div className="mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-zinc-800 to-black border border-white/5 flex items-center justify-center text-rose-500 mb-2">
-                    <FolderPlus size={20} />
+        <>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:border-zinc-700 transition-colors group relative flex flex-col h-48">
+                <button
+                    onClick={onDelete}
+                    className="absolute top-2 right-2 p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
+                >
+                    <Trash2 size={14} />
+                </button>
+                <div className="mb-3 flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-zinc-800 to-black border border-white/5 flex items-center justify-center text-rose-500">
+                            <FolderPlus size={20} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-white truncate w-32" title={plan.title}>{plan.title}</h3>
+                            <p className="text-xs text-zinc-500">{new Date(plan.created_at).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                        {items.slice(0, 3).map(item => (
+                            <div key={item.id} className="w-6 h-6 rounded bg-zinc-800 text-[8px] flex items-center justify-center text-zinc-400 border border-zinc-700">
+                                {item.route?.grade || "?"}
+                            </div>
+                        ))}
+                        {items.length > 3 && (
+                            <div className="w-6 h-6 rounded bg-zinc-800 text-[8px] flex items-center justify-center text-zinc-500 border border-zinc-700">
+                                +{items.length - 3}
+                            </div>
+                        )}
+                        {items.length === 0 && <span className="text-[10px] text-zinc-600 italic">Vide</span>}
+                    </div>
                 </div>
-                <h3 className="font-bold text-white truncate pr-6">{plan.title}</h3>
-                <p className="text-xs text-zinc-500">{new Date(plan.created_at).toLocaleDateString()}</p>
+
+                <button
+                    onClick={openManager}
+                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-300 rounded-lg transition-colors flex items-center justify-center gap-2 mt-auto"
+                >
+                    <Plus size={14} /> Gérer les blocs ({items.length})
+                </button>
             </div>
 
-            <button className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-300 rounded-lg transition-colors flex items-center justify-center gap-2">
-                <Plus size={14} /> Gérer les blocs
-            </button>
-        </div>
+            {/* Modal Manager */}
+            {isManaging && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+                        <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+                            <div>
+                                <h3 className="text-xl font-black italic">Gérer le dossier "{plan.title}"</h3>
+                                <p className="text-sm text-zinc-500">Ajoutez ou retirez des blocs pour ce grimpeur.</p>
+                            </div>
+                            <button onClick={() => setIsManaging(false)} className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors text-white">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* Available Routes */}
+                            <div className="flex-1 p-6 overflow-y-auto border-r border-zinc-800">
+                                <h4 className="font-bold mb-4 sticky top-0 bg-zinc-900 py-2 z-10 flex items-center gap-2">
+                                    <Search size={14} /> Bibliothèque de Blocs
+                                </h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {availableRoutes.map(route => {
+                                        const isAdded = items.find(i => i.route_id === route.id);
+                                        return (
+                                            <button
+                                                key={route.id}
+                                                onClick={() => !isAdded && handleAddRoute(route.id)}
+                                                disabled={isAdded}
+                                                className={cn(
+                                                    "flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
+                                                    isAdded
+                                                        ? "bg-rose-500/10 border-rose-500/30 opacity-50 cursor-not-allowed"
+                                                        : "bg-zinc-950 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900"
+                                                )}
+                                            >
+                                                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm", isAdded ? "bg-rose-500 text-white" : "bg-zinc-800 text-white")}>
+                                                    {route.grade}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-sm truncate text-white">{route.name}</p>
+                                                    <p className="text-[10px] text-zinc-500">{new Date(route.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                                {isAdded && <div className="text-rose-500 text-[10px] font-bold uppercase">Ajouté</div>}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Current Items */}
+                            <div className="w-1/3 bg-zinc-950 p-6 overflow-y-auto flex flex-col">
+                                <h4 className="font-bold mb-4 sticky top-0 bg-zinc-950 py-2 z-10 text-rose-500">
+                                    Contenu du Dossier ({items.length})
+                                </h4>
+                                <div className="space-y-2 flex-1">
+                                    {items.map((item, idx) => (
+                                        <div key={item.id} className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900 border border-zinc-800 group hover:border-red-500/30 transition-colors">
+                                            <span className="text-xs font-mono text-zinc-600 w-4">{idx + 1}</span>
+                                            <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center font-bold text-xs text-white">
+                                                {item.route?.grade}
+                                            </div>
+                                            <p className="flex-1 text-sm truncate text-zinc-300">{item.route?.name}</p>
+                                            <button
+                                                onClick={() => handleRemoveRoute(item.id)}
+                                                className="text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {items.length === 0 && (
+                                        <p className="text-center text-zinc-600 text-sm italic mt-10">Glissez des blocs ici ou cliquez sur ceux de gauche.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
