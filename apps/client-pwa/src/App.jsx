@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, PlusSquare, List, User, ChevronRight } from 'lucide-react';
+import { Home, PlusSquare, List, User, ChevronRight, Activity } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -14,6 +14,7 @@ import TrainingPlanDetailPage from './pages/TrainingPlanDetailPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import WallEditorPage from './pages/WallEditorPage';
+import TrainingLogPage from './pages/TrainingLogPage';
 import InstallPrompt from './components/InstallPrompt';
 
 function cn(...inputs) {
@@ -156,7 +157,7 @@ const BottomNav = () => {
                 </Link>
             </div>
 
-            <NavLink icon={<PlusSquare size={22} className="opacity-0 w-12" />} to="#" active={false} disabled /> {/* Spacer handle */}
+            <NavLink icon={<Activity size={22} />} to="/training" active={isActive('/training')} />
             <NavLink icon={<User size={22} />} to="/profile" active={isActive('/profile')} />
         </nav>
     );
@@ -198,6 +199,7 @@ export default function App() {
                     <Route path="/create" element={<CreateRoutePage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/poster" element={<PosterPage />} />
+                    <Route path="/training" element={<TrainingLogPage />} />
                     <Route path="/admin/editor" element={<WallEditorPage />} />
                     <Route path="/plan/:id" element={<TrainingPlanDetailPage />} />
                 </Routes>
