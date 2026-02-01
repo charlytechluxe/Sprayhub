@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { Search, FolderPlus, User, ChevronRight, Plus, Trash2, X } from 'lucide-react';
+import { Search, FolderPlus, User, ChevronRight, Plus, Trash2, X, RefreshCw } from 'lucide-react';
 import { cn } from './lib/utils';
 
 export function TrainingView() {
@@ -10,42 +10,70 @@ export function TrainingView() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
 
+    const fetchUsers = async () => {
+        setLoading(true);
+        const { data: profiles, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('full_name', { ascending: true });
+
+        if (!error && profiles) {
+            setUsers(profiles);
+        }
+        setLoading(false);
+    };
+
     // Fetch Users (Profiles)
     useEffect(() => {
-        async function fetchUsers() {
-            // Fetch profiles first
-            const { data: profiles, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('full_name', { ascending: true });
-
-            if (!error && profiles) {
-                setUsers(profiles);
-            } else {
-                console.error("Error fetching profiles:", error);
-            }
-            setLoading(false);
-        }
         fetchUsers();
     }, []);
 
-    // Fetch Plans when user selected
+    const filteredUsers = users.filter(u => {
+        const searchStr = search.toLowerCase();
+        return (
+            (u.full_name || '').toLowerCase().includes(searchStr) ||
+            (u.email || '').toLowerCase().includes(searchStr) ||
+            (u.id || '').toLowerCase().includes(searchStr)
+        );
+    });
+
+    // Fetch Plans when user selected & subscribe to changes
     useEffect(() => {
         if (!selectedUser) return;
-        async function fetchPlans() {
+
+        const fetchPlans = async () => {
             const { data } = await supabase
                 .from('training_folders')
                 .select('*')
                 .eq('assigned_user_id', selectedUser.id)
                 .order('created_at', { ascending: false });
             setPlans(data || []);
-        }
+        };
+
         fetchPlans();
+
+        // Real-time subscription
+        const channel = supabase
+            .channel(`training_folders_${selectedUser.id}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'training_folders',
+                filter: `assigned_user_id=eq.${selectedUser.id}`
+            }, () => {
+                fetchPlans();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [selectedUser]);
 
     const handleCreatePlan = async () => {
         const title = prompt("Nom du dossier (ex: Force Bloqueur):");
         if (!title) return;
+        const description = prompt("Description (optionnel):");
 
         const { data: { user } } = await supabase.auth.getUser(); // Admin/Coach ID
 
@@ -53,6 +81,7 @@ export function TrainingView() {
             .from('training_folders')
             .insert({
                 title,
+                description,
                 assigned_user_id: selectedUser.id,
                 coach_id: user?.id
             })
@@ -72,22 +101,32 @@ export function TrainingView() {
         <div className="flex h-full gap-6">
             {/* Left: User List */}
             <div className="w-1/3 flex flex-col gap-4">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Rechercher un grimpeur..."
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-rose-500 transition-colors"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                    />
-                </div>
-                <div className="flex-1 bg-zinc-900/30 rounded-3xl border border-zinc-800 overflow-hidden">
-                    <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
-                        <h3 className="font-bold text-sm">Grimpeurs ({users.length})</h3>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Rechercher (Nom, Email...)"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-rose-500 transition-colors"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
                     </div>
-                    <div className="overflow-y-auto h-full p-2 space-y-1">
-                        {users.filter(u => (u.full_name || u.email || '').toLowerCase().includes(search.toLowerCase())).map(user => (
+                    <button onClick={fetchUsers} className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-400 transition-colors">
+                        <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                    </button>
+                </div>
+
+                <div className="flex-1 bg-zinc-900/30 rounded-3xl border border-zinc-800 overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-zinc-800 bg-zinc-900/50 flex justify-between items-center">
+                        <h3 className="font-bold text-sm">Grimpeurs ({filteredUsers.length})</h3>
+                    </div>
+                    <div className="overflow-y-auto flex-1 p-2 space-y-1">
+                        {filteredUsers.length === 0 ? (
+                            <div className="py-12 text-center text-zinc-600 italic">
+                                Aucun grimpeur trouvé.
+                            </div>
+                        ) : filteredUsers.map(user => (
                             <button
                                 key={user.id}
                                 onClick={() => setSelectedUser(user)}

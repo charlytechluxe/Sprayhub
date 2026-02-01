@@ -1,0 +1,6 @@
+{
+    "buildCommand": "cd ../.. && npm install && npm run build --prefix apps/admin-hub -- --config vite.web.config.ts",
+    "outputDirectory": "dist",
+    "framework": null,
+    "installCommand": "npm install"
+}

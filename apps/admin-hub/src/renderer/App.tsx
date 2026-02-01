@@ -170,6 +170,28 @@ function DashboardView() {
         }
 
         fetchStats();
+
+        // Subscribe to real-time changes for routes and profiles
+        const routesChannel = supabase
+            .channel('admin_dashboard_routes')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'routes' },
+                () => fetchStats()
+            )
+            .subscribe();
+
+        const profilesChannel = supabase
+            .channel('admin_dashboard_profiles')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'profiles' },
+                () => fetchStats()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(routesChannel);
+            supabase.removeChannel(profilesChannel);
+        };
     }, []);
 
     if (loading) return <div className="text-zinc-500">Chargement des données...</div>;
@@ -243,6 +265,22 @@ function ModerationView() {
 
     useEffect(() => {
         fetchRoutes();
+
+        // Subscribe to real-time changes
+        const channel = supabase
+            .channel('admin_routes_realtime')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'routes' },
+                (payload) => {
+                    console.log('Route change detected:', payload);
+                    fetchRoutes(); // Refresh the list
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const handleDelete = async (id: number) => {

@@ -2,12 +2,55 @@
   "name": "sprayhub-admin",
   "private": true,
   "version": "1.0.0",
+  "description": "SprayHub Admin - Gestion du mur d'escalade",
+  "author": "Coach Charly",
   "main": "dist-electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build && electron-builder",
+    "build:web": "vite build --config vite.web.config.ts",
+    "build:mac": "vite build && electron-builder --mac",
+    "build:win": "vite build && electron-builder --win",
+    "build:linux": "vite build && electron-builder --linux",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.sprayhub.admin",
+    "productName": "SprayHub Admin",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.sports",
+      "icon": "public/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Sports"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
@@ -16,6 +59,7 @@
     "lucide-react": "^0.312.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-zoom-pan-pinch": "^3.7.0",
     "replicate": "^1.4.0",
     "tailwind-merge": "^2.2.0"
   },
