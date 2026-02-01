@@ -58,27 +58,25 @@ const getBBox = (coords) => {
     return { minX, maxX, minY, maxY };
 };
 
-// Check if inner is largely inside outer
-const checkOverlap = (inner, outer) => {
+// Coverage Ratio: Fraction of inner points inside outer polygon
+const getCoverageRatio = (inner, outer, bboxOuter) => {
+    // Fast fail bbox
     const bboxInner = getBBox(inner);
-    const bboxOuter = getBBox(outer);
-
-    // Fast fail: Bbox not potentially inside
-    if (bboxInner.minX < bboxOuter.minX || bboxInner.maxX > bboxOuter.maxX ||
-        bboxInner.minY < bboxOuter.minY || bboxInner.maxY > bboxOuter.maxY) {
-        return false;
+    if (bboxInner.maxX < bboxOuter.minX || bboxInner.minX > bboxOuter.maxX ||
+        bboxInner.maxY < bboxOuter.minY || bboxInner.minY > bboxOuter.maxY) {
+        return 0;
     }
 
-    // Centroid check is usually enough for "complete containment" of ghost holds
-    const centroid = getCentroid(inner);
-    if (isPointInPolygon(centroid, outer)) return true;
-
-    return false;
+    let pointsInside = 0;
+    // Check every point of inner polygon
+    for (const p of inner) {
+        if (isPointInPolygon(p, outer)) pointsInside++;
+    }
+    return pointsInside / inner.length;
 };
 
-
 async function surgicalRestore() {
-    console.log("👨‍⚕️ RESTAURATION CHIRURGICALE (Nettoyage des fantômes)...");
+    console.log("👨‍⚕️ RESTAURATION CHIRURGICALE V2 (Nettoyage Avancé)...");
 
     try {
         // 1. Load the PRO Data
@@ -86,7 +84,6 @@ async function surgicalRestore() {
         console.log("Lecture du fichier haute définition...");
         let rawHolds = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
 
-        // Normalize
         let holds = rawHolds.map(h => ({
             ...h,
             contour: h.contour || h.geometry,
@@ -95,8 +92,7 @@ async function surgicalRestore() {
 
         console.log(`📦 ${holds.length} prises chargées.`);
 
-        // 2. FILTER DUPLICATES (Ghosts)
-        // Sort by area descending so big holds come first
+        // 2. FILTER DUPLICATES (Ghosts AND Overlaps)
         holds.sort((a, b) => b.area - a.area);
 
         const keptHolds = [];
@@ -108,9 +104,16 @@ async function surgicalRestore() {
 
             // Check against all ALREADY KEPT holds (larger ones)
             for (const kept of keptHolds) {
-                if (checkOverlap(current.contour, kept.contour)) {
+                const keptBBox = getBBox(kept.contour);
+                const coverage = getCoverageRatio(current.contour, kept.contour, keptBBox);
+
+                // If more than 60% of the small hold is covered by a larger hold -> Ghost/Duplicate
+                // Or if Centroid is inside (classic check)
+                const centroid = getCentroid(current.contour);
+                const isCentroidInside = isPointInPolygon(centroid, kept.contour);
+
+                if (coverage > 0.60 || isCentroidInside) {
                     isGhost = true;
-                    // console.log(`👻 Prise fantôme supprimée (incluse dans ${kept.id})`);
                     break;
                 }
             }

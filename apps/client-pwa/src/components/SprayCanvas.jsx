@@ -114,8 +114,9 @@ export default function SprayCanvas({
                 contour: polygon.contour
             };
             onAddHold(newHold);
-            // Notify parent to show inspector
-            if (onUpdateHold) onUpdateHold(newHold.id, newHold, true); // true = focused
+            onAddHold(newHold);
+            // DO NOT call onUpdateHold here. onAddHold in parent handles state and focus.
+            // if (onUpdateHold) onUpdateHold(newHold.id, newHold, true);
         } else {
             // Existing selection: Cycle Type
             const currentIndex = CYCLE_ORDER.indexOf(existingHold.type);
