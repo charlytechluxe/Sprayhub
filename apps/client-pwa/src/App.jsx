@@ -1,28 +1,24 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, PlusSquare, List, User, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+
+import { supabase } from './lib/supabase';
 
 import RoutesPage from './pages/RoutesPage';
 import CreateRoutePage from './pages/CreateRoutePage';
 import RouteDetailPage from './pages/RouteDetailPage';
 import PosterPage from './pages/PosterPage';
 import TrainingPlanDetailPage from './pages/TrainingPlanDetailPage';
+import AuthPage from './pages/AuthPage';
+import ProfilePage from './pages/ProfilePage';
+import WallEditorPage from './pages/WallEditorPage';
+import InstallPrompt from './components/InstallPrompt';
 
 function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
-
-import { supabase } from './lib/supabase';
-import { useEffect, useState } from 'react';
-
-import AuthPage from './pages/AuthPage';
-import ProfilePage from './pages/ProfilePage'; // New Import
-import WallEditorPage from './pages/WallEditorPage';
-import { useNavigate } from 'react-router-dom';
-
-
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -35,7 +31,6 @@ const HomePage = () => {
         const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                // FORCE AUTH ON FIRST LAUNCH
                 navigate('/auth');
             }
         };
@@ -45,10 +40,7 @@ const HomePage = () => {
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
-            // 1. Total Count
             const { count } = await supabase.from('routes').select('*', { count: 'exact', head: true });
-
-            // 2. Featured Route (Most recent one for now)
             const { data: routes } = await supabase
                 .from('routes')
                 .select('*')
@@ -145,7 +137,7 @@ const BottomNav = () => {
     if (['/create', '/poster', '/auth'].includes(location.pathname)) return null;
 
     return (
-        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] h-20 bg-black/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 flex items-center justify-between px-6 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 overflow-hidden">
+        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] h-20 bg-black/60 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 flex items-center justify-between px-6 z-50 shadow-2xl ring-1 ring-white/5 overflow-hidden">
             {/* Glass Glare Effect */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50"></div>
 
@@ -154,7 +146,7 @@ const BottomNav = () => {
 
             {/* Central Floating Button */}
             <div className="relative -top-6">
-                <Link to="/create" className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-b from-accent-pink to-rose-700 text-white shadow-[0_10px_30px_rgba(255,0,85,0.4)] border-4 border-black/50 overflow-hidden group active:scale-95 transition-transform">
+                <Link to="/create" className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-b from-accent-pink to-rose-700 text-white shadow-xl border-4 border-black/50 overflow-hidden group active:scale-95 transition-transform">
                     {/* Inner shine */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/30 opacity-100"></div>
                     <PlusSquare size={26} className="relative z-10 group-hover:rotate-90 transition-transform duration-300" />
@@ -174,7 +166,7 @@ const NavLink = ({ icon, to, active, disabled }) => (
             "relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300",
             disabled ? "pointer-events-none w-2" : "",
             active
-                ? "text-white bg-white/10 shadow-[inner_0_0_10px_rgba(255,255,255,0.1)]"
+                ? "text-white bg-white/10 shadow-inner"
                 : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
         )}
     >
@@ -187,12 +179,10 @@ const NavLink = ({ icon, to, active, disabled }) => (
     </Link>
 );
 
-import InstallPrompt from './components/InstallPrompt';
-
 export default function App() {
     return (
         <Router>
-            <div className="min-h-screen bg-background text-foreground antialiased selection:bg-accent-pink selection:text-white">
+            <div className="min-h-screen bg-zinc-950 text-white antialiased selection:bg-accent-pink selection:text-white pb-32">
                 <InstallPrompt />
                 <Routes>
                     <Route path="/" element={<HomePage />} />
