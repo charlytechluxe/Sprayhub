@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { Save, Trash2, PlusCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Save, Trash2, PenTool, AlertTriangle, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function WallEditorPage() {
@@ -10,7 +10,8 @@ export default function WallEditorPage() {
     const [holds, setHolds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedHoldId, setSelectedHoldId] = useState(null);
-    const [mode, setMode] = useState('select'); // 'select' or 'add'
+    const [mode, setMode] = useState('select'); // 'select', 'draw', 'delete'
+    const [tempPoints, setTempPoints] = useState([]); // For drawing new polygon
 
     useEffect(() => {
         const fetchWall = async () => {
@@ -44,32 +45,34 @@ export default function WallEditorPage() {
         setSelectedHoldId(null);
     };
 
-    // Helper to create a circle polygon
-    const createCirclePolygon = (cx, cy, rVal = 0.02) => {
-        const points = [];
-        for (let i = 0; i < 16; i++) {
-            const theta = (i / 16) * Math.PI * 2;
-            const x = cx + rVal * Math.cos(theta); // Aspect ratio simplified
-            const y = cy + rVal * Math.sin(theta);
-            points.push([x, y]);
+    const finishDrawing = () => {
+        if (tempPoints.length < 3) {
+            alert("Il faut au moins 3 points pour faire une prise.");
+            return;
         }
-        return points;
+        const newHold = {
+            id: `manual_${Date.now()}`,
+            contour: tempPoints,
+            type: 'handfoot' // default
+        };
+        setHolds(prev => [...prev, newHold]);
+        setTempPoints([]);
+        setMode('select');
+    };
+
+    const cancelDrawing = () => {
+        setTempPoints([]);
+        setMode('select');
     };
 
     const handleCanvasClick = (e) => {
-        if (mode === 'add') {
+        if (mode === 'draw') {
             // Calculate coords relative to image
-            const rect = e.target.getBoundingClientRect();
+            const rect = e.currentTarget.getBoundingClientRect(); // use currentTarget for the wrapper
             const x = (e.clientX - rect.left) / rect.width;
             const y = (e.clientY - rect.top) / rect.height;
 
-            const newHold = {
-                id: `manual_${Date.now()}`,
-                contour: createCirclePolygon(x, y),
-                type: 'handfoot' // default
-            };
-            setHolds(prev => [...prev, newHold]);
-            setMode('select'); // Switch back to select after adding
+            setTempPoints(prev => [...prev, [x, y]]);
         } else {
             setSelectedHoldId(null);
         }
@@ -79,7 +82,7 @@ export default function WallEditorPage() {
         e.stopPropagation();
         if (mode === 'delete') {
             setHolds(prev => prev.filter(h => h.id !== holdId));
-        } else {
+        } else if (mode === 'select') {
             setSelectedHoldId(holdId);
         }
     };
@@ -103,30 +106,49 @@ export default function WallEditorPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="h-14 bg-zinc-900 border-b border-zinc-800 flex items-center justify-center gap-4">
-                <button
-                    onClick={() => setMode('select')}
-                    className={`px-4 py-1 rounded-full text-xs font-bold uppercase transition-all ${mode === 'select' ? 'bg-white text-black' : 'text-zinc-500'}`}
-                >
-                    Sélection
-                </button>
-                <button
-                    onClick={() => setMode('add')}
-                    className={`px-4 py-1 rounded-full text-xs font-bold uppercase transition-all flex items-center gap-2 ${mode === 'add' ? 'bg-blue-500 text-white' : 'text-zinc-500 bg-zinc-800'}`}
-                >
-                    <PlusCircle size={14} /> Ajouter Prise
-                </button>
-                <button
-                    onClick={() => setMode('delete')}
-                    className={`px-4 py-1 rounded-full text-xs font-bold uppercase transition-all flex items-center gap-2 ${mode === 'delete' ? 'bg-red-500 text-white' : 'text-zinc-500 bg-zinc-800'}`}
-                >
-                    <Trash2 size={14} /> Mode Gomme
-                </button>
+            <div className="h-14 bg-zinc-900 border-b border-zinc-800 flex items-center justify-center gap-4 relative">
+                {mode === 'draw' ? (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <span className="text-xs font-bold text-blue-400 mr-2">Points: {tempPoints.length}</span>
+                        <button onClick={finishDrawing} className="bg-green-500 text-black px-4 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            <CheckCircle size={14} /> Valider
+                        </button>
+                        <button onClick={cancelDrawing} className="bg-zinc-700 text-white px-4 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            <XCircle size={14} /> Annuler
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        <button
+                            onClick={() => setMode('select')}
+                            className={`px-4 py-1 rounded-full text-xs font-bold uppercase transition-all ${mode === 'select' ? 'bg-white text-black' : 'text-zinc-500'}`}
+                        >
+                            Sélection
+                        </button>
+                        <button
+                            onClick={() => setMode('draw')}
+                            className={`px-4 py-1 rounded-full text-xs font-bold uppercase transition-all flex items-center gap-2 ${mode === 'draw' ? 'bg-blue-500 text-white' : 'text-zinc-500 bg-zinc-800'}`}
+                        >
+                            <PenTool size={14} /> Détourer (Stylo)
+                        </button>
+                        <button
+                            onClick={() => setMode('delete')}
+                            className={`px-4 py-1 rounded-full text-xs font-bold uppercase transition-all flex items-center gap-2 ${mode === 'delete' ? 'bg-red-500 text-white' : 'text-zinc-500 bg-zinc-800'}`}
+                        >
+                            <Trash2 size={14} /> Gomme
+                        </button>
+                    </>
+                )}
             </div>
 
             {/* Canvas */}
             <div className="flex-1 overflow-hidden relative cursor-crosshair">
-                <TransformWrapper initialScale={1} minScale={1} maxScale={8}>
+                <TransformWrapper
+                    initialScale={1}
+                    minScale={1}
+                    maxScale={8}
+                    disabled={mode === 'draw'} // Disable zoom/pan while drawing to avoid conflict
+                >
                     <TransformComponent wrapperClassName="!w-full !h-full" contentClassName="!w-full !h-full">
                         <div className="relative w-full h-full flex items-center justify-center">
                             {wall && (
@@ -137,6 +159,7 @@ export default function WallEditorPage() {
                                         alt="Wall"
                                     />
                                     <svg viewBox="0 0 1000 1333.33" className="absolute inset-0 w-full h-full overflow-visible">
+                                        {/* Existing Holds */}
                                         {holds.map(h => {
                                             const points = (h.contour || h.geometry).map(p => `${p[0] * 1000},${p[1] * 1333.33}`).join(' ');
                                             const isSelected = selectedHoldId === h.id;
@@ -152,6 +175,28 @@ export default function WallEditorPage() {
                                                 />
                                             );
                                         })}
+
+                                        {/* Drawing Preview */}
+                                        {tempPoints.length > 0 && (
+                                            <>
+                                                <polyline
+                                                    points={tempPoints.map(p => `${p[0] * 1000},${p[1] * 1333.33}`).join(' ')}
+                                                    fill="none"
+                                                    stroke="#0099FF"
+                                                    strokeWidth="2"
+                                                    strokeDasharray="5,5"
+                                                />
+                                                {tempPoints.map((p, i) => (
+                                                    <circle
+                                                        key={i}
+                                                        cx={p[0] * 1000}
+                                                        cy={p[1] * 1333.33}
+                                                        r={4}
+                                                        fill="#0099FF"
+                                                    />
+                                                ))}
+                                            </>
+                                        )}
                                     </svg>
                                 </div>
                             )}
@@ -160,9 +205,10 @@ export default function WallEditorPage() {
                 </TransformWrapper>
 
                 {/* Info Overlay */}
-                {mode === 'add' && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-xl text-sm font-bold animate-bounce z-10 pointer-events-none">
-                        Clique sur le mur pour poser une prise
+                {mode === 'draw' && (
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-blue-600/90 backdrop-blur text-white px-6 py-3 rounded-2xl shadow-xl text-center z-10 pointer-events-none">
+                        <p className="font-bold text-sm mb-1">Mode Stylo Actif 🖊️</p>
+                        <p className="text-xs opacity-80">Clique point par point pour entourer la prise.<br />Clique "Valider" en haut quand c'est fini.</p>
                     </div>
                 )}
                 {mode === 'delete' && (
