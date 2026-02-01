@@ -141,39 +141,49 @@ const BottomNav = () => {
     const location = useLocation();
     const isActive = (path) => location.pathname === path;
 
-    // Hide nav on create page to give more space for canvas, and on poster page for printing
-    if (location.pathname === '/create' || location.pathname === '/poster') return null;
-
-    // Hide nav on auth page
-    if (location.pathname === '/auth') return null;
+    // Hide nav on specific pages
+    if (['/create', '/poster', '/auth'].includes(location.pathname)) return null;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 h-24 bg-background/80 backdrop-blur-2xl border-t border-white/5 flex items-center justify-around px-8 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-            <NavLink icon={<Home size={24} />} label="Accueil" to="/" active={isActive('/')} />
-            <NavLink icon={<List size={24} />} label="Explorer" to="/routes" active={isActive('/routes')} />
-            <div className="relative w-16 h-16 flex items-center justify-center">
-                <NavLink icon={<PlusSquare size={28} />} label="" to="/create" active={isActive('/create')} primary />
+        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] h-20 bg-black/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 flex items-center justify-between px-6 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 overflow-hidden">
+            {/* Glass Glare Effect */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50"></div>
+
+            <NavLink icon={<Home size={22} />} to="/" active={isActive('/')} />
+            <NavLink icon={<List size={22} />} to="/routes" active={isActive('/routes')} />
+
+            {/* Central Floating Button */}
+            <div className="relative -top-6">
+                <Link to="/create" className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-b from-accent-pink to-rose-700 text-white shadow-[0_10px_30px_rgba(255,0,85,0.4)] border-4 border-black/50 overflow-hidden group active:scale-95 transition-transform">
+                    {/* Inner shine */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/30 opacity-100"></div>
+                    <PlusSquare size={26} className="relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+                </Link>
             </div>
-            <NavLink icon={<PlusSquare size={24} className="opacity-0" />} label="Training" to="#" active={false} />
-            <NavLink icon={<User size={24} />} label="Profil" to="/profile" active={isActive('/profile')} />
+
+            <NavLink icon={<PlusSquare size={22} className="opacity-0" />} to="#" active={false} disabled /> {/* Spacer */}
+            <NavLink icon={<User size={22} />} to="/profile" active={isActive('/profile')} />
         </nav>
     );
 };
 
-const NavLink = ({ icon, label, to, active, primary = false }) => (
+const NavLink = ({ icon, to, active, disabled }) => (
     <Link
         to={to}
         className={cn(
-            "flex flex-col items-center justify-center transition-all duration-300 relative",
-            active ? "text-white" : "text-zinc-600 hover:text-zinc-400",
-            primary && "absolute -top-12 bg-accent-pink text-white rounded-full w-20 h-20 shadow-[0_0_30px_rgba(255,0,85,0.4)] active:scale-90 z-50 border-[6px] border-background flex items-center justify-center transition-all"
+            "relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300",
+            disabled ? "pointer-events-none w-2" : "",
+            active
+                ? "text-white bg-white/10 shadow-[inner_0_0_10px_rgba(255,255,255,0.1)]"
+                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
         )}
     >
-        {active && !primary && <div className="absolute -top-3 w-1 h-1 bg-accent-pink rounded-full shadow-[0_0_10px_#FB2056]"></div>}
-        <div className={cn("p-2 transition-all", active && !primary && "text-accent-pink drop-shadow-[0_0_8px_rgba(255,0,85,0.5)]")}>
+        {active && (
+            <div className="absolute bottom-2 w-1 h-1 bg-accent-pink rounded-full shadow-[0_0_8px_#FB2056]"></div>
+        )}
+        <div className={cn("transition-all duration-300", active ? "-translate-y-1" : "")}>
             {icon}
         </div>
-        {label && <span className={cn("text-[10px] mt-1 font-bold tracking-tight uppercase transition-colors", active ? "text-white" : "text-zinc-600")}>{label}</span>}
     </Link>
 );
 
