@@ -209,9 +209,15 @@ export default function RouteDetailPage() {
                         <p className="text-zinc-400 text-sm font-medium">Créé par <span className="text-white">{route.author || "Anonyme"}</span></p>
                     </div>
                     {/* Tick Button */}
-                    <button className="bg-accent-pink text-white px-6 py-3 rounded-2xl font-black uppercase tracking-wider shadow-[0_0_20px_rgba(255,0,85,0.3)] active:scale-95 transition-all flex items-center gap-2 border border-white/10 hover:bg-accent-pink/90">
+                    <button
+                        onClick={handleSend}
+                        className={`px-6 py-3 rounded-2xl font-black uppercase tracking-wider active:scale-95 transition-all flex items-center gap-2 border ${isSent
+                                ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)] border-green-400/20'
+                                : 'bg-accent-pink text-white shadow-[0_0_20px_rgba(255,0,85,0.3)] border-white/10 hover:bg-accent-pink/90'
+                            }`}
+                    >
                         <CheckCircle size={18} />
-                        Croix
+                        {isSent ? 'Validé ✓' : 'Croix'}
                     </button>
                 </div>
 
@@ -231,6 +237,6 @@ export default function RouteDetailPage() {
                     <ChevronRight className="text-zinc-600" />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
