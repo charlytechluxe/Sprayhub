@@ -94,7 +94,7 @@ ALTER TABLE sponsors ENABLE ROW LEVEL SECURITY;
 
 -- Policies Walls
 CREATE POLICY "Public read walls" ON walls FOR SELECT USING (true);
-CREATE POLICY "Public write walls" ON walls FOR ALL USING (true); -- Simplification Dev
+CREATE POLICY "Public write walls" ON walls FOR ALL USING (true);
 
 -- Policies Routes
 CREATE POLICY "Public read routes" ON routes FOR SELECT USING (true);

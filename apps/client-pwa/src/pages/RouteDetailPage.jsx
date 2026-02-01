@@ -113,72 +113,81 @@ export default function RouteDetailPage() {
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-zinc-500">Chargement...</div>;
-    if (!route) return <div className="min-h-screen bg-black flex items-center justify-center text-red-500">Bloc introuvable.</div>;
+    if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-zinc-500">Chargement...</div>;
+    if (!route) return <div className="min-h-screen bg-background flex items-center justify-center text-red-500">Bloc introuvable.</div>;
+
+    const allHoldIds = Array.isArray(route.holds) ? route.holds.map(h => h.hold_id) : [];
 
     return (
-        <div className="flex flex-col h-screen bg-background">
-            {/* Header */}
-            <header className="h-16 flex items-center justify-between px-4 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md absolute top-0 left-0 right-0 z-50">
-                <button onClick={() => navigate(-1)} className="btn-touch w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10">
-                    <ChevronLeft size={24} />
-                </button>
-
-                <div className="text-center">
-                    <h1 className="font-black text-lg text-white leading-none">{route.name}</h1>
-                    <span className="text-xs font-bold text-accent-pink uppercase tracking-widest">{route.grade}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <button className="btn-touch w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10">
-                        <Share2 size={20} />
+        <div className="flex flex-col h-screen bg-background text-white overflow-hidden">
+            {/* Header / Canvas Area */}
+            <div className="flex-1 relative bg-background">
+                <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start pointer-events-none">
+                    <button onClick={() => navigate(-1)} className="btn-touch w-10 h-10 bg-surface/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 pointer-events-auto shadow-lg hover:bg-surface/80 transition-all">
+                        <ArrowLeft size={20} />
                     </button>
+                    <div className="flex gap-2 pointer-events-auto">
+                        <button className="btn-touch w-10 h-10 bg-surface/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 shadow-lg hover:bg-surface/80 transition-all">
+                            <Share2 size={18} />
+                        </button>
+                        {/* Poster Button */}
+                        <button
+                            onClick={() => navigate('/poster', { state: { route } })}
+                            className="btn-touch w-10 h-10 bg-accent-pink rounded-full flex items-center justify-center text-white shadow-[0_0_15px_rgba(255,0,85,0.4)] border border-white/20 hover:scale-105 transition-all"
+                        >
+                            <Download size={18} />
+                        </button>
+                    </div>
                 </div>
-            </header>
 
-            {/* Canvas Area - Full Screen */}
-            <div className="flex-1 relative bg-black">
-                <SprayCanvas
-                    imageUrl={imageUrl}
-                    holds={route.holds || []}
-                    isEditable={false}
-                />
+                <div className="w-full h-full">
+                    <SprayCanvas
+                        holds={route.holds}
+                        routeMode={true}
+                        isEditable={false}
+                    />
+                </div>
+
+                {/* Grade Badge Overlay */}
+                <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none">
+                    <div className="flex items-center justify-center gap-6 mb-4 text-xs font-bold text-white/80 backdrop-blur-md p-2 rounded-full bg-surface/40 mx-auto w-fit px-6 border border-white/10 shadow-xl">
+                        <span>{route.grade}</span>
+                        <span className="w-1 h-1 bg-zinc-500 rounded-full"></span>
+                        <span>{allHoldIds.length} Prises</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Footer / Action Bar */}
-            <div className="absolute bottom-6 left-4 right-4 safe-bottom">
+            {/* Bottom Sheet Details */}
+            <div className="bg-surface border-t border-white/5 p-6 rounded-t-3xl -mt-6 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                <div className="w-12 h-1 bg-zinc-700 rounded-full mx-auto mb-6 opacity-50" />
 
-                {/* Stats Row */}
-                <div className="flex items-center justify-center gap-6 mb-4 text-xs font-bold text-white/50 backdrop-blur-sm p-1 rounded-full bg-black/30 mx-auto w-fit px-4 border border-white/5">
-                    <span>{ascentsCount} Réussites</span>
-                    <span className="w-1 h-1 bg-white/20 rounded-full" />
-                    <span>{likesCount} Likes</span>
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-1 text-white drop-shadow-md">{route.name || "Sans nom"}</h1>
+                        <p className="text-zinc-400 text-sm font-medium">Créé par <span className="text-white">{route.author || "Anonyme"}</span></p>
+                    </div>
+                    {/* Tick Button */}
+                    <button className="bg-accent-pink text-white px-6 py-3 rounded-2xl font-black uppercase tracking-wider shadow-[0_0_20px_rgba(255,0,85,0.3)] active:scale-95 transition-all flex items-center gap-2 border border-white/10 hover:bg-accent-pink/90">
+                        <CheckCircle size={18} />
+                        Croix
+                    </button>
                 </div>
 
-                <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-2xl">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Créateur</span>
-                        <span className="text-sm font-bold text-white">Coach (Admin)</span>
-                    </div>
-
+                <div className="bg-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl p-4 flex items-center justify-between shadow-inner">
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleLike}
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-95 ${isLiked ? 'bg-red-500/10 text-red-500 border border-red-500/50' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
-                        >
-                            <Heart className={isLiked ? "fill-current" : ""} size={24} />
-                        </button>
-
-                        <button
-                            onClick={handleSend}
-                            className={`h-12 px-6 rounded-xl font-black uppercase tracking-wider text-sm transition-all active:scale-95 flex items-center gap-2 ${isSent
-                                    ? 'bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]'
-                                    : 'bg-white text-black hover:scale-105'
-                                }`}
-                        >
-                            {isSent ? "Validé !" : "Valider"}
-                        </button>
+                        <div className="w-10 h-10 bg-accent-blue/10 rounded-xl flex items-center justify-center text-accent-blue border border-accent-blue/20">
+                            <Star size={20} fill="currentColor" className="text-accent-blue" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Note Moyenne</p>
+                            <div className="flex items-center gap-1">
+                                <span className="text-white font-black text-lg">4.8</span>
+                                <span className="text-zinc-600 text-xs">(12 votes)</span>
+                            </div>
+                        </div>
                     </div>
+                    <ChevronRight className="text-zinc-600" />
                 </div>
             </div>
         </div>

@@ -8,19 +8,23 @@ export default {
     theme: {
         extend: {
             colors: {
-                background: '#0a0a0a',
+                background: '#121214', // Luxury Dark Grey (Gunmetal)
                 foreground: '#ffffff',
+                surface: {
+                    DEFAULT: '#1c1c1f', // Lighter grey for cards
+                    light: '#27272a',
+                },
                 accent: {
-                    pink: '#FB2056',
-                    blue: '#32A9D6',
-                    green: '#A4C639',
+                    pink: '#ff0055', // Neon Pink
+                    blue: '#00ccff', // Neon Blue
+                    green: '#ccff00', // Neon Lime
                     yellow: '#FFD700',
                     red: '#FB2056',
                 },
                 grimpe: {
-                    pink: '#FB2056',
-                    blue: '#32A9D6',
-                    dark: '#222222',
+                    pink: '#ff0055',
+                    blue: '#00ccff',
+                    dark: '#18181b',
                 }
             },
             height: {

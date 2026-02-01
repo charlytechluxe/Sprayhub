@@ -111,7 +111,7 @@ export default function ProfilePage() {
     if (loading && !user) return <div className="min-h-screen bg-black flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 pb-32">
+        <div className="min-h-screen bg-background text-white p-6 pb-32">
             <h1 className="text-3xl font-black mb-8 italic uppercase tracking-tighter">Mon <span className="text-accent-pink">Profil</span></h1>
 
             <div className="flex flex-col items-center mb-8">

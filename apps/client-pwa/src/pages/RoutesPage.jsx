@@ -84,64 +84,58 @@ export default function RoutesPage() {
                 </button>
             </div>
 
-            <div className="relative mb-8">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            {/* Search */}
+            <div className="mb-6 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
                 <input
                     type="text"
                     placeholder="Rechercher un bloc..."
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-accent-pink transition-colors"
+                    className="w-full bg-surface/50 border border-white/5 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-accent-pink/50 focus:ring-1 focus:ring-accent-pink/50 transition-all text-white placeholder:text-zinc-600 shadow-inner"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
             </div>
 
-            <div className="space-y-4">
+            {/* List */}
+            <div className="space-y-3 pb-32">
                 {loading ? (
                     <div className="text-center text-zinc-500 animate-pulse py-8">Chargement des blocs...</div>
                 ) : filteredRoutes.length === 0 ? (
                     <div className="text-center text-zinc-500 py-8">Aucun bloc trouvé.</div>
                 ) : (
-                    filteredRoutes.map((route) => (
-                        <div
+                    filteredRoutes.map(route => (
+                        <Link
                             key={route.id}
-                            onClick={() => navigate(`/route/${route.id}`)}
-                            className="group block bg-zinc-900/50 rounded-3xl p-4 border border-zinc-900 active:bg-zinc-800 transition-colors cursor-pointer"
+                            to={`/route/${route.id}`}
+                            className="group block bg-surface/50 rounded-3xl p-4 border border-white/5 hover:bg-surface/80 active:scale-[0.99] transition-all cursor-pointer shadow-lg hover:shadow-xl hover:border-white/10 mb-3"
                         >
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className="w-3 h-12 rounded-full relative"
-                                    style={{ backgroundColor: GRADE_HEX[route.grade] || '#555' }}
-                                >
-                                    {/* Tick Indicator */}
-                                    {route.isSent && (
-                                        <div className="absolute -left-1 -top-1 w-5 h-5 bg-green-500 rounded-full border-2 border-black flex items-center justify-center text-black text-[10px] shadow-lg">
-                                            ✓
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center font-black text-accent-pink border border-white/5 shadow-inner relative">
+                                        {route.grade}
+                                        {route.isSent && (
+                                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-surface flex items-center justify-center text-black text-[10px]">✓</div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-white group-hover:text-accent-pink transition-colors">{route.name}</h3>
+                                        <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium">
+                                            <span>{route.holds?.length || 0} prises</span>
+                                            <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
+                                            <span>{new Date(route.created_at).toLocaleDateString()}</span>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-lg text-white">{route.name}</h3>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm text-zinc-500">
-                                            {route.holds?.length || 0} prises
-                                        </p>
-                                        <span className="w-1 h-1 rounded-full bg-zinc-700"></span>
-                                        <span className="text-[10px] uppercase text-zinc-600 font-bold">
-                                            {new Date(route.created_at).toLocaleDateString()}
-                                        </span>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <div className={`flex items-center gap-1 ${route.isLiked ? 'text-red-500' : 'text-zinc-400'}`}>
-                                        <Heart size={14} className={route.isLiked ? "fill-current" : ""} />
-                                        <span className="text-xs font-bold">{route.likes_count || 0}</span>
-                                    </div>
+
+                                <div className={`flex items-center gap-1 ${route.isLiked ? 'text-accent-pink' : 'text-zinc-600'}`}>
+                                    <Heart size={16} className={route.isLiked ? "fill-current" : ""} />
+                                    <span className="text-xs font-bold">{route.likes_count || 0}</span>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     ))
                 )}
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

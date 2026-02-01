@@ -161,7 +161,7 @@ export default function CreateRoutePage() {
             </div>
 
             {/* Bottom Bar: Grade Selector or Hold Inspector */}
-            <div className="bg-zinc-900 border-t border-zinc-800 z-30 transition-all duration-300">
+            <div className="bg-surface/90 backdrop-blur-xl border-t border-white/10 z-30 transition-all duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
 
                 {/* 1. HOLD INSPECTOR (If hold selected) */}
                 {activeHold ? (

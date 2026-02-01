@@ -66,7 +66,7 @@ export default function AuthPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
             {/* Background Ambience */}
             <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-accent-pink/20 rounded-full blur-[128px] pointer-events-none" />
             <div className="absolute bottom-[-20%] right-[-20%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[128px] pointer-events-none" />
@@ -120,7 +120,7 @@ export default function AuthPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full h-14 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-12 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium"
+                            className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
                         />
                     </div>
                     <div className="relative">
@@ -131,7 +131,7 @@ export default function AuthPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="w-full h-14 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-12 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium"
+                            className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
                         />
                     </div>
 
