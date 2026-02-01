@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Share2, Heart } from 'lucide-react';
+import { ChevronLeft, Share2, Heart, Download, Trash2, ArrowLeft, CheckCircle, Star, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import SprayCanvas from '../components/SprayCanvas';
 
@@ -10,44 +10,47 @@ export default function RouteDetailPage() {
     const [route, setRoute] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Social State
-    const [isLiked, setIsLiked] = useState(false);
-    const [isSent, setIsSent] = useState(false);
-    const [likesCount, setLikesCount] = useState(0);
-    const [ascentsCount, setAscentsCount] = useState(0);
-
-    const imageUrl = "/wall_v1.jpg";
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     useEffect(() => {
         if (id) {
             fetchRoute();
             checkUserInteractions();
+            checkUserRole();
         }
     }, [id]);
 
-    const fetchRoute = async () => {
-        try {
-            // Fetch Route Data
-            const { data, error } = await supabase
-                .from('routes')
-                .select('*')
-                .eq('id', id)
+    const checkUserRole = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            setCurrentUserId(user.id);
+            // Check profile role
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
                 .single();
 
+            if (profile && (profile.role === 'admin' || profile.role === 'coach')) {
+                setIsAdmin(true);
+            }
+        }
+    };
+
+    // ... fetchRoute ...
+
+    const handleDelete = async () => {
+        if (!window.confirm("Voulez-vous vraiment supprimer ce bloc ? Cette action est irréversible.")) return;
+
+        try {
+            const { error } = await supabase.from('routes').delete().eq('id', id);
             if (error) throw error;
-            setRoute(data);
-
-            // Fetch Counts (Simple approach for MVP, can be optimized with count(*))
-            const { count: lCount } = await supabase.from('likes').select('user_id', { count: 'exact', head: true }).eq('route_id', id);
-            const { count: aCount } = await supabase.from('ascents').select('user_id', { count: 'exact', head: true }).eq('route_id', id);
-
-            setLikesCount(lCount || 0);
-            setAscentsCount(aCount || 0);
-
+            alert("Bloc supprimé.");
+            navigate('/routes');
         } catch (err) {
-            console.error("Error fetching route:", err);
-        } finally {
-            setLoading(false);
+            console.error("Error deleting route:", err);
+            alert("Erreur lors de la suppression.");
         }
     };
 
@@ -127,6 +130,14 @@ export default function RouteDetailPage() {
                         <ArrowLeft size={20} />
                     </button>
                     <div className="flex gap-2 pointer-events-auto">
+                        {(isAdmin || currentUserId === route.user_id) && (
+                            <button
+                                onClick={handleDelete}
+                                className="btn-touch w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 backdrop-blur-md border border-red-500/50 shadow-lg hover:bg-red-500 hover:text-white transition-all"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        )}
                         <button className="btn-touch w-10 h-10 bg-surface/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 shadow-lg hover:bg-surface/80 transition-all">
                             <Share2 size={18} />
                         </button>

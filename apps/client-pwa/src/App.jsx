@@ -22,7 +22,7 @@ import ProfilePage from './pages/ProfilePage'; // New Import
 import WallEditorPage from './pages/WallEditorPage';
 import { useNavigate } from 'react-router-dom';
 
-import TrainingPlanDetailPage from './pages/TrainingPlanDetailPage';
+
 
 const HomePage = () => {
     const navigate = useNavigate();

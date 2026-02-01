@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    base: '/sprayhub/', // Set base path for sub-directory deployment
     plugins: [
         react(),
         VitePWA({
