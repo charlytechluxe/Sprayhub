@@ -104,6 +104,8 @@ export default function SprayCanvas({
         if (!isEditable) return;
         if (isLongPress) return; // Ignore click if it was a long press
 
+        const existingHold = selectedHoldsMap[polygon.id];
+
         if (!existingHold) {
             // New selection: Default to 'handfoot' (Blue)
             const newHold = {
