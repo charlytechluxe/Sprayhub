@@ -4,12 +4,12 @@ import { supabase } from '../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 
 const GRADE_HEX = {
-    'Vert': '#A4C639', // Art de la Grimpe Lime Green
-    'Bleu': '#32A9D6', // Art de la Grimpe Blue
-    'Jaune': '#FFD700', // Art de la Grimpe Yellow
-    'Rouge': '#FB2056', // Art de la Grimpe Pink/Red
-    'Rose': '#FB2056',
     'Orange': '#FF8C00',
+    'Rose': '#FF00FF',
+    'Vert': '#A4C639',
+    'Jaune': '#FFD700',
+    'Bleu': '#32A9D6',
+    'Rouge': '#FF0000',
     'Blanc': '#ffffff',
     'Projet': '#a1a1aa',
 };

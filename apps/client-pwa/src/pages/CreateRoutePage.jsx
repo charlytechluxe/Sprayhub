@@ -6,13 +6,13 @@ import { supabase } from '../lib/supabase';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 const GRADE_COLORS = [
-    { name: 'Vert', hex: '#A4C639' },
-    { name: 'Bleu', hex: '#32A9D6' },
-    { name: 'Jaune', hex: '#FFD700' },
-    { name: 'Rouge', hex: '#FB2056' },
-    { name: 'Rose', hex: '#FB2056' },
-    { name: 'Orange', hex: '#FF8C00' },
-    { name: 'Blanc', hex: '#ffffff' },
+    { name: 'Orange', hex: '#FF8C00' }, // Très Facile
+    { name: 'Rose', hex: '#FF00FF' },   // Facile
+    { name: 'Vert', hex: '#A4C639' },   // Moyen
+    { name: 'Jaune', hex: '#FFD700' },  // Assez Difficile
+    { name: 'Bleu', hex: '#32A9D6' },   // Difficile
+    { name: 'Rouge', hex: '#FF0000' },  // Très Difficile
+    { name: 'Blanc', hex: '#ffffff' },  // Extrême
     { name: 'Projet', hex: '#a1a1aa' },
 ];
 
