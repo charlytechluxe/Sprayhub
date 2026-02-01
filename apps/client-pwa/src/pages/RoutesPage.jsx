@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Heart, ChevronRight, Bookmark } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const GRADE_HEX = {
     'Vert': '#A4C639', // Art de la Grimpe Lime Green
