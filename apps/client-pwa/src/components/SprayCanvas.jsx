@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { supabase } from '../lib/supabase';
-import AI_DATA from '../data/holds_final_force.json'; // Reactivated for 'AI' data
+// import AI_DATA from '../data/holds_final_force.json'; // DEPRECATED: Cloud First
 
 const TYPE_COLORS = {
     start: '#00FF00',    // Neon Green
@@ -25,10 +25,8 @@ export default function SprayCanvas({
 
     const [allHolds, setAllHolds] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const [hasError, setHasError] = useState(false);
 
-    // Fetch ecosystem holds from Supabase OR use local AI Data
+    // Fetch ecosystem holds from Supabase
     useEffect(() => {
         const fetchHolds = async () => {
             try {
@@ -38,22 +36,21 @@ export default function SprayCanvas({
                     .select('id, detection_data')
                     .limit(1);
 
-                let detectionData = [];
+                if (error) throw error;
 
-                if (!error && walls && walls.length > 0 && walls[0].detection_data && walls[0].detection_data.length > 0) {
-                    detectionData = walls[0].detection_data;
-                    console.log(`✅ Loaded ${detectionData.length} holds from Supabase`);
-                } else {
-                    console.warn("⚠️ No wall found in DB or empty data. Fallback to AI_DATA (Local JSON).");
-                    detectionData = AI_DATA;
+                if (!walls || walls.length === 0) {
+                    console.log("⚠️  No wall found in database");
+                    setLoading(false);
+                    return;
                 }
 
-                setAllHolds(detectionData);
+                // Extract holds from detection_data JSONB
+                const detectionData = walls[0].detection_data || [];
+                console.log(`✅ Loaded ${detectionData.length} holds from Supabase`);
 
+                setAllHolds(detectionData);
             } catch (err) {
                 console.error("❌ Error fetching holds:", err);
-                // Last ditch fallback
-                setAllHolds(AI_DATA);
             } finally {
                 setLoading(false);
             }
@@ -114,13 +111,11 @@ export default function SprayCanvas({
                 y: polygon.y || 0,
                 type: 'handfoot',
                 note: '',
-                contour: polygon.contour,
-                holes: polygon.holes // Ensure holes are passed if present
+                contour: polygon.contour
             };
-            console.log("Adding new hold:", newHold);
             onAddHold(newHold);
-            // DO NOT call onUpdateHold here to avoid state race condition in parent
-            // Parent should handle focusing the new hold if desired.
+            // Notify parent to show inspector
+            if (onUpdateHold) onUpdateHold(newHold.id, newHold, true); // true = focused
         } else {
             // Existing selection: Cycle Type
             const currentIndex = CYCLE_ORDER.indexOf(existingHold.type);
@@ -128,7 +123,6 @@ export default function SprayCanvas({
             const nextType = CYCLE_ORDER[nextIndex];
 
             const updatedHold = { ...existingHold, type: nextType };
-            console.log("Updating hold:", updatedHold);
             onUpdateHold(existingHold.id, updatedHold, true); // true = focused
         }
     };
@@ -146,26 +140,10 @@ export default function SprayCanvas({
                     <div className="relative w-full h-full flex items-center justify-center">
                         {imageUrl ? (
                             <div className="relative w-full aspect-[3/4]">
-                                {!imageLoaded && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
-                                        <div className="w-10 h-10 rounded-full border-2 border-zinc-800 border-t-accent-pink animate-spin" />
-                                    </div>
-                                )}
                                 <img
-                                    src={hasError ? "/wall_v1.jpg" : imageUrl}
+                                    src={imageUrl}
                                     alt="Spray Wall"
                                     className="w-full h-full object-cover select-none pointer-events-none"
-                                    onLoad={() => setImageLoaded(true)}
-                                    onError={() => {
-                                        if (!hasError) {
-                                            setHasError(true);
-                                            setImageLoaded(false); // Reset to show spinner while fallback loads, or keep true if fallback is instant. 
-                                            // Actually, if we switch src, we should wait for onLoad again.
-                                            // But safe to just setHasError and let the new src trigger onLoad.
-                                        }
-                                    }}
-                                    loading="eager"
-                                    style={{ opacity: imageLoaded ? 1 : 0 }}
                                 />
 
                                 <svg
@@ -176,35 +154,18 @@ export default function SprayCanvas({
                                         const hold = selectedHoldsMap[poly.id];
                                         const isSelected = !!hold;
 
-                                        // Construct Path Data
-                                        // Outer contour
-                                        let d = `M ${poly.contour[0][0] * 1000} ${poly.contour[0][1] * 1333.33}`;
-                                        for (let i = 1; i < poly.contour.length; i++) {
-                                            d += ` L ${poly.contour[i][0] * 1000} ${poly.contour[i][1] * 1333.33}`;
-                                        }
-                                        d += " Z";
-
-                                        // Inner holes (if any)
-                                        if (poly.holes && poly.holes.length > 0) {
-                                            poly.holes.forEach(hole => {
-                                                d += ` M ${hole[0][0] * 1000} ${hole[0][1] * 1333.33}`;
-                                                for (let i = 1; i < hole.length; i++) {
-                                                    d += ` L ${hole[i][0] * 1000} ${hole[i][1] * 1333.33}`;
-                                                }
-                                                d += " Z";
-                                            });
-                                        }
+                                        // Standardize points string
+                                        const points = poly.contour.map(p => `${p[0] * 1000},${p[1] * 1333.33}`).join(' ');
 
                                         return (
-                                            <path
+                                            <polygon
                                                 key={poly.id}
-                                                d={d}
+                                                points={points}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
                                                 onTouchStart={(e) => handleTouchStart(e, poly)}
                                                 onTouchEnd={(e) => handleTouchEnd(e, poly)}
                                                 className="transition-all duration-100 cursor-pointer"
                                                 fill="transparent"
-                                                fillRule="evenodd"
                                                 pointerEvents="all"
                                                 stroke={isSelected ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.15)"}
                                                 strokeWidth={isSelected ? "2" : "1"}
