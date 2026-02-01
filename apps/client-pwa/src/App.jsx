@@ -113,18 +113,22 @@ const HomePage = () => {
             </div>
 
             {/* Sponsoring Slot */}
-            <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4 flex items-center justify-between mb-24">
+            {/* Developer Slot */}
+            <a href="https://appleservice.fr" target="_blank" rel="noopener noreferrer" className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4 flex items-center justify-between mb-24 transition-colors hover:bg-zinc-900/50">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-1">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d6/Petzl_logo.svg" alt="Petzl" className="w-full h-full object-contain" />
+                    <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center text-white">
+                        {/* Using a generic icon or we could import one. I'll use a text fallback or simple svg if needed, but simplest is keeping the structure. Let's assume Code icon or just text.
+                             User didn't provide logo, so I will use a simple "C" for Charly or similar style.
+                          */}
+                        <span className="font-black italic text-xs">CTL</span>
                     </div>
                     <div>
-                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Partenaire</p>
-                        <p className="text-xs font-bold">Équipez-vous chez Petzl</p>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Développé par</p>
+                        <p className="text-xs font-bold text-white">Charly Tech & Luxe</p>
                     </div>
                 </div>
                 <ChevronRight size={16} className="text-zinc-600" />
-            </div>
+            </a>
         </div>
     );
 };
