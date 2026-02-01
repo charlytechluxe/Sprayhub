@@ -12,12 +12,14 @@ import {
     Check,
     X,
     Edit,
-    Upload
+    Upload,
+    PenTool
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { segmentWallImage } from './lib/replicate';
 import { TrainingView } from './TrainingView';
+import { SurgicalEditor } from './SurgicalEditor';
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -145,8 +147,12 @@ function DashboardView() {
     useEffect(() => {
         async function fetchStats() {
             setLoading(true);
+
             // Count routes
             const { count: routesCount } = await supabase.from('routes').select('*', { count: 'exact', head: true });
+
+            // Count users (profiles)
+            const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
 
             // Recent routes
             const { data: routes } = await supabase
@@ -157,7 +163,7 @@ function DashboardView() {
 
             setStats({
                 routes: routesCount || 0,
-                users: 0 // Placeholder as we don't have users table yet
+                users: usersCount || 0
             });
             setRecentRoutes(routes || []);
             setLoading(false);
@@ -280,6 +286,27 @@ function ModerationView() {
                             </div>
 
                             <div className="flex flex-col gap-2">
+                                <button
+                                    onClick={async () => {
+                                        // Unfeature all others first (or let DB index handle it, but for UI sync let's be explicit if needed)
+                                        // But since we have a unique index on (is_featured) WHERE (is_featured = true), 
+                                        // we should probably unfeature existing one first.
+                                        if (!route.is_featured) {
+                                            await supabase.from('routes').update({ is_featured: false }).eq('is_featured', true);
+                                        }
+                                        await supabase.from('routes').update({ is_featured: !route.is_featured }).eq('id', route.id);
+                                        fetchRoutes();
+                                    }}
+                                    className={cn(
+                                        "text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2",
+                                        route.is_featured
+                                            ? "bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                            : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400"
+                                    )}
+                                >
+                                    <Award size={14} className={route.is_featured ? "fill-yellow-500" : ""} />
+                                    {route.is_featured ? "En avant" : "Mettre en avant"}
+                                </button>
                                 <button onClick={() => handleDelete(route.id)} className="bg-rose-600/10 hover:bg-rose-600/20 text-rose-500 text-xs font-bold px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
                                     <X size={14} /> Supprimer
                                 </button>
@@ -294,11 +321,32 @@ function ModerationView() {
 
 
 
+
 function WallView() {
     const [wall, setWall] = useState<any>(null);
+    const [allWalls, setAllWalls] = useState<any[]>([]);
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSurgicalMode, setIsSurgicalMode] = useState(false);
+
+    async function fetchWalls() {
+        const { data } = await supabase.from('walls').select('*').order('created_at', { ascending: false });
+        setAllWalls(data || []);
+
+        // Find active wall
+        const active = data?.find(w => w.is_active) || data?.[0];
+        if (active) setWall(active);
+    }
+
+
+    const handleSetActive = async (id: string) => {
+        // Reset all
+        await supabase.from('walls').update({ is_active: false }).eq('is_active', true);
+        // Set new active
+        await supabase.from('walls').update({ is_active: true }).eq('id', id);
+        fetchWalls();
+    };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -426,21 +474,12 @@ function WallView() {
     };
 
     useEffect(() => {
-        async function fetchWall() {
-            const { data } = await supabase.from('walls').select('*').limit(1).maybeSingle();
-            if (data) {
-                setWall(data);
-                // Auto-scan if no holds
-                const { count } = await supabase.from('holds').select('*', { count: 'exact', head: true }).eq('wall_id', data.id);
-                if (!count && !data.image_url.includes('localhost')) {
-                    handleScanWithUrl(data.image_url, data.id);
-                }
-            } else {
-                setWall({ name: 'Mur Principal', image_url: '/wall_v1.jpg', id: 'local-default' });
-            }
-        }
-        fetchWall();
+        fetchWalls();
     }, []);
+
+    if (isSurgicalMode) {
+        return <SurgicalEditor onBack={() => setIsSurgicalMode(false)} />;
+    }
 
     return (
         <div className="space-y-8">
@@ -455,6 +494,12 @@ function WallView() {
                         {isUploading ? "Upload..." : "Changer la photo"}
                         <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={isUploading} />
                     </label>
+                    <button
+                        onClick={() => setIsSurgicalMode(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 border border-blue-600/20 transition-all"
+                    >
+                        <PenTool size={16} /> Mode Chirurgical
+                    </button>
                     <button
                         onClick={handleScan}
                         disabled={isScanning || isUploading || !wall?.image_url}
@@ -502,28 +547,59 @@ function WallView() {
                     </div>
                 </div>
 
-                <div className="flex flex-col justify-center gap-6">
+                <div className="flex flex-col gap-6">
                     <div className="bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
-                        <h4 className="font-bold mb-1">{wall?.name || "Sans nom"}</h4>
-                        <p className="text-xs text-zinc-500 font-mono mb-4 break-all">URL: {wall?.image_url}</p>
+                        <h4 className="font-bold mb-1 text-zinc-100 flex items-center gap-2">
+                            {wall?.name || "Sans nom"}
+                            {wall?.is_active && <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full uppercase font-black">Actif</span>}
+                        </h4>
+                        <p className="text-[10px] text-zinc-500 font-mono mb-4 break-all">ID: {wall?.id}</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
                                 <p className="text-[10px] text-zinc-500 font-black uppercase mb-1">Source</p>
-                                <p className="text-sm font-bold">{wall?.image_url.includes('supabase') ? "Cloud (Supabase)" : "Local / Cache"}</p>
+                                <p className="text-sm font-bold truncate">{wall?.image_url.includes('supabase') ? "Cloud" : "Local"}</p>
                             </div>
                             <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
                                 <p className="text-[10px] text-zinc-500 font-black uppercase mb-1">IA Status</p>
-                                <p className="text-sm font-bold text-green-500">Auto-Ready</p>
+                                <p className="text-sm font-bold text-green-500 truncate">Auto-Ready</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-yellow-500/5 text-yellow-500/80 p-6 rounded-3xl border border-yellow-500/10 text-xs leading-relaxed">
-                        <strong className="block mb-2 text-yellow-500">Flux de travail automatique :</strong>
-                        1. Sélectionnez une nouvelle photo.<br />
-                        2. L'image est automatiquement hébergée sur votre cloud.<br />
-                        3. L'IA SAM 2 détecte instantanément toutes les prises.<br />
-                        4. Les coordonnées sont prêtes pour vos grimpeurs !
+                    <div className="bg-zinc-900/30 rounded-3xl p-6 border border-zinc-800">
+                        <h4 className="text-sm font-bold mb-4 uppercase tracking-widest text-zinc-500">Historique des versions</h4>
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                            {allWalls.map(w => (
+                                <div
+                                    key={w.id}
+                                    onClick={() => setWall(w)}
+                                    className={cn(
+                                        "flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer group",
+                                        wall?.id === w.id ? "bg-zinc-800 border-zinc-700" : "bg-zinc-950/50 border-zinc-800 hover:border-zinc-700"
+                                    )}
+                                >
+                                    <div className="w-12 h-12 rounded-lg bg-zinc-900 overflow-hidden border border-zinc-800">
+                                        <img src={w.image_url} className="w-full h-full object-cover" alt="" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-bold truncate">{w.name}</p>
+                                        <p className="text-[10px] text-zinc-500">{new Date(w.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                    {w.is_active ? (
+                                        <div className="text-green-500 bg-green-500/10 p-1.5 rounded-full">
+                                            <Check size={14} />
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleSetActive(w.id); }}
+                                            className="opacity-0 group-hover:opacity-100 text-[10px] font-black uppercase bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-all"
+                                        >
+                                            Activer
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

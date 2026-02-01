@@ -38,7 +38,35 @@ export default function RouteDetailPage() {
         }
     };
 
-    // ... fetchRoute ...
+    const fetchRoute = async () => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('routes')
+                .select('*, wall:walls(*)')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            setRoute(data);
+
+            // Set stats counts (placeholders for now if needed, or query them)
+            const { count: likes } = await supabase.from('likes').select('*', { count: 'exact', head: true }).eq('route_id', id);
+            const { count: ascents } = await supabase.from('ascents').select('*', { count: 'exact', head: true }).eq('route_id', id);
+            setLikesCount(likes || 0);
+            setAscentsCount(ascents || 0);
+
+        } catch (err) {
+            console.error("Error fetching route:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const [isLiked, setIsLiked] = useState(false);
+    const [isSent, setIsSent] = useState(false);
+    const [likesCount, setLikesCount] = useState(0);
+    const [ascentsCount, setAscentsCount] = useState(0);
 
     const handleDelete = async () => {
         if (!window.confirm("Voulez-vous vraiment supprimer ce bloc ? Cette action est irréversible.")) return;
@@ -153,7 +181,9 @@ export default function RouteDetailPage() {
 
                 <div className="w-full h-full">
                     <SprayCanvas
-                        holds={route.holds}
+                        holds={route.holds?.map(h => ({ id: h.hold_id, type: h.type })) || []}
+                        wallId={route.wall_id}
+                        imageUrl={route.wall?.image_url}
                         routeMode={true}
                         isEditable={false}
                     />

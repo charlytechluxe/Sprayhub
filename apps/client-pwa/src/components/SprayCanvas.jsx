@@ -14,7 +14,8 @@ const TYPE_COLORS = {
  * SprayCanvas: Cloud-Connected & Paint-Mode Ready
  */
 export default function SprayCanvas({
-    imageUrl,
+    imageUrl: manualImageUrl,
+    wallId,
     holds = [],
     onAddHold,
     onUpdateHold,
@@ -25,39 +26,79 @@ export default function SprayCanvas({
 
     const [allHolds, setAllHolds] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [wallImageUrl, setWallImageUrl] = useState(manualImageUrl);
 
-    // Fetch ecosystem holds from Supabase
+    // Fetch ecosystem holds from Supabase & Subscribe to changes
     useEffect(() => {
+        let channel;
+
         const fetchHolds = async () => {
             try {
-                // Fetch Wall with detection_data
-                const { data: walls, error } = await supabase
-                    .from('walls')
-                    .select('id, detection_data')
-                    .limit(1);
+                setLoading(true);
+                let query = supabase.from('walls').select('id, image_url, detection_data');
+
+                if (wallId) {
+                    query = query.eq('id', wallId);
+                } else {
+                    // Fallback to active wall
+                    query = query.eq('is_active', true).limit(1);
+                }
+
+                const { data: walls, error } = await query;
 
                 if (error) throw error;
 
                 if (!walls || walls.length === 0) {
-                    console.log("⚠️  No wall found in database");
+                    // If no active wall, try the latest one
+                    const { data: latest } = await supabase.from('walls').select('*').order('created_at', { ascending: false }).limit(1);
+                    if (latest && latest[0]) {
+                        const targetWall = latest[0];
+                        setAllHolds(targetWall.detection_data || []);
+                        setWallImageUrl(manualImageUrl || targetWall.image_url);
+                        setupSubscription(targetWall.id);
+                    }
                     setLoading(false);
                     return;
                 }
 
-                // Extract holds from detection_data JSONB
-                const detectionData = walls[0].detection_data || [];
-                console.log(`✅ Loaded ${detectionData.length} holds from Supabase`);
+                const activeWall = walls[0];
+                setAllHolds(activeWall.detection_data || []);
+                setWallImageUrl(manualImageUrl || activeWall.image_url);
+                console.log(`✅ Loaded ${activeWall.detection_data?.length} holds for wall ${activeWall.id}`);
+                setupSubscription(activeWall.id);
 
-                setAllHolds(detectionData);
             } catch (err) {
-                console.error("❌ Error fetching holds:", err);
+                console.error("❌ Error fetching wall data:", err);
             } finally {
                 setLoading(false);
             }
         };
 
+        const setupSubscription = (id) => {
+            if (channel) supabase.removeChannel(channel);
+
+            channel = supabase
+                .channel(`wall_realtime_${id}`)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'walls',
+                    filter: `id=eq.${id}`
+                }, (payload) => {
+                    console.log("🔄 Wall updated in real-time:", payload.new.id);
+                    if (payload.new.detection_data) {
+                        setAllHolds(payload.new.detection_data);
+                    }
+                })
+                .subscribe();
+        };
+
         fetchHolds();
-    }, []);
+
+        return () => {
+            if (channel) supabase.removeChannel(channel);
+        };
+    }, [wallId, manualImageUrl]);
 
     // Quick lookup for selected holds
     const selectedHoldsMap = useMemo(() => {
@@ -142,7 +183,7 @@ export default function SprayCanvas({
                         {imageUrl ? (
                             <div className="relative w-full aspect-[3/4]">
                                 <img
-                                    src={imageUrl}
+                                    src={wallImageUrl}
                                     alt="Spray Wall"
                                     className="w-full h-full object-cover select-none pointer-events-none"
                                 />
@@ -154,6 +195,9 @@ export default function SprayCanvas({
                                     {!loading && allHolds.map((poly) => {
                                         const hold = selectedHoldsMap[poly.id];
                                         const isSelected = !!hold;
+
+                                        // In route mode (not editable), only show selected holds
+                                        if (!isEditable && !isSelected) return null;
 
                                         // Standardize points string
                                         const points = poly.contour.map(p => `${p[0] * 1000},${p[1] * 1333.33}`).join(' ');
