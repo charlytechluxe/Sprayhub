@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Save, X, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 import SprayCanvas from '../components/SprayCanvas';
 import { supabase } from '../lib/supabase';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const GRADE_COLORS = [
     { name: 'Vert', hex: '#A4C639' },
@@ -68,6 +69,52 @@ export default function CreateRoutePage() {
     // Close inspector when clicking empty space (this needs canvas support, but for now back button works)
     // Or we can add a 'bg' click handler in the Inspector backdrop.
 
+    const handleSave = async () => {
+        if (!name.trim()) {
+            alert("Veuillez donner un nom au bloc.");
+            return;
+        }
+        if (holds.length === 0) {
+            alert("Veuillez sélectionner au moins une prise.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert("Vous devez être connecté pour créer un bloc.");
+                navigate('/auth');
+                return;
+            }
+
+            const routeData = {
+                name: name.trim(),
+                grade: grade,
+                holds: holds,
+                wall_id: currentWall?.id, // Optional if wall_id is nullable, but recommended
+                author_id: user.id
+            };
+
+            const { data, error } = await supabase
+                .from('routes')
+                .insert(routeData)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log("Bloc créé !", data);
+            navigate(`/route/${data.id}`);
+
+        } catch (err) {
+            console.error("Erreur lors de la sauvegarde :", err);
+            alert("Erreur lors de la sauvegarde. Vérifiez la console.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="flex flex-col h-screen bg-background">
             {/* Header */}
@@ -98,15 +145,17 @@ export default function CreateRoutePage() {
                         <div className="w-10 h-10 rounded-full border border-zinc-900 border-t-accent-pink animate-spin" />
                     </div>
                 ) : (
-                    <SprayCanvas
-                        imageUrl={imageUrl}
-                        holds={holds}
-                        onAddHold={handleAddHold}
-                        onUpdateHold={handleUpdateHold}
-                        onRemoveHold={handleRemoveHold}
-                        isEditable={true}
-                        activeTool={selectionMode}
-                    />
+                    <ErrorBoundary>
+                        <SprayCanvas
+                            imageUrl={imageUrl}
+                            holds={holds}
+                            onAddHold={handleAddHold}
+                            onUpdateHold={handleUpdateHold}
+                            onRemoveHold={handleRemoveHold}
+                            isEditable={true}
+                            activeTool={selectionMode}
+                        />
+                    </ErrorBoundary>
                 )}
             </div>
 
@@ -139,13 +188,13 @@ export default function CreateRoutePage() {
                                     handleUpdateHold(activeHold.id, { ...activeHold, type: nextType }, true);
                                 }}
                                 className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center bg-zinc-800 transition-colors ${activeHold.type === 'start' ? 'border-accent-green' :
-                                        activeHold.type === 'handfoot' ? 'border-accent-blue' :
-                                            activeHold.type === 'foot' ? 'border-accent-yellow' : 'border-accent-red'
+                                    activeHold.type === 'handfoot' ? 'border-accent-blue' :
+                                        activeHold.type === 'foot' ? 'border-accent-yellow' : 'border-accent-red'
                                     }`}
                             >
                                 <span className={`w-4 h-4 rounded-full ${activeHold.type === 'start' ? 'bg-accent-green' :
-                                        activeHold.type === 'handfoot' ? 'bg-accent-blue' :
-                                            activeHold.type === 'foot' ? 'bg-accent-yellow' : 'bg-accent-red'
+                                    activeHold.type === 'handfoot' ? 'bg-accent-blue' :
+                                        activeHold.type === 'foot' ? 'bg-accent-yellow' : 'bg-accent-red'
                                     } shadow-[0_0_10px_currentColor]`} />
                             </button>
 
