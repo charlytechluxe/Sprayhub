@@ -137,20 +137,25 @@ const BottomNav = () => {
     if (['/create', '/poster', '/auth'].includes(location.pathname)) return null;
 
     return (
-        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] h-20 bg-black/60 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 flex items-center justify-between px-6 z-50 shadow-2xl ring-1 ring-white/5 overflow-hidden">
-            {/* Glass Glare Effect */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50"></div>
+        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] h-20 bg-white/5 backdrop-blur-[40px] rounded-[2.5rem] border border-white/10 flex items-center justify-between px-6 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_20px_rgba(251,32,86,0.15)] ring-1 ring-white/10 overflow-hidden">
+            {/* Liquid Glare Effect */}
+            <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-80"></div>
+            <div className="absolute -bottom-1 left-0 right-0 h-[30%] bg-gradient-to-t from-rose-500/5 to-transparent"></div>
 
             <NavLink icon={<Home size={22} />} to="/" active={isActive('/')} />
             <NavLink icon={<List size={22} />} to="/routes" active={isActive('/routes')} />
 
-            {/* Central Floating Button */}
+            {/* Central Liquid Button */}
             <div className="relative -top-6">
-                <Link to="/create" className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-b from-accent-pink to-rose-700 text-white shadow-xl border-4 border-black/50 overflow-hidden group active:scale-95 transition-transform">
-                    {/* Inner shine */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/30 opacity-100"></div>
-                    <PlusSquare size={26} className="relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+                <Link to="/create" className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-b from-accent-pink to-rose-700 text-white shadow-[0_10px_35px_rgba(255,0,85,0.6)] border-[4px] border-zinc-950 overflow-hidden group active:scale-95 transition-all duration-300">
+                    {/* Dynamic shine highlight */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute -inset-2 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+
+                    <PlusSquare size={26} className="relative z-10 group-hover:scale-110 transition-transform duration-300" />
                 </Link>
+                {/* Button Glow Floor */}
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-accent-pink/50 blur-md rounded-full"></div>
             </div>
 
             <NavLink icon={<PlusSquare size={22} className="opacity-0" />} to="#" active={false} disabled /> {/* Spacer */}
@@ -163,17 +168,20 @@ const NavLink = ({ icon, to, active, disabled }) => (
     <Link
         to={to}
         className={cn(
-            "relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300",
-            disabled ? "pointer-events-none w-2" : "",
+            "relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-500 group",
+            disabled ? "pointer-events-none w-2 text-transparent" : "",
             active
-                ? "text-white bg-white/10 shadow-inner"
-                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+                ? "text-accent-pink scale-110"
+                : "text-zinc-500 hover:text-zinc-300"
         )}
     >
         {active && (
-            <div className="absolute bottom-2 w-1 h-1 bg-accent-pink rounded-full shadow-[0_0_8px_#FB2056]"></div>
+            <>
+                <div className="absolute inset-0 bg-rose-500/10 blur-xl rounded-full scale-150 animate-pulse"></div>
+                <div className="absolute bottom-1 w-1.5 h-1.5 bg-accent-pink rounded-full shadow-[0_0_12px_#FB2056,0_0_20px_rgba(251,32,86,0.6)]"></div>
+            </>
         )}
-        <div className={cn("transition-all duration-300", active ? "-translate-y-1" : "")}>
+        <div className={cn("relative z-10 transition-all duration-500", active ? "-translate-y-1.5 drop-shadow-[0_0_8px_rgba(251,32,86,0.8)]" : "group-hover:scale-110")}>
             {icon}
         </div>
     </Link>
