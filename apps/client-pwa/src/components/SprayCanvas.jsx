@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { supabase } from '../lib/supabase';
-// import AI_DATA from '../data/holds_final_force.json'; // DEPRECATED: Cloud First
+import AI_DATA from '../data/holds_final_force.json'; // Reactivated for 'AI' data
 
 const TYPE_COLORS = {
     start: '#00FF00',    // Neon Green
@@ -28,7 +28,7 @@ export default function SprayCanvas({
     const [imageLoaded, setImageLoaded] = useState(false);
     const [hasError, setHasError] = useState(false);
 
-    // Fetch ecosystem holds from Supabase
+    // Fetch ecosystem holds from Supabase OR use local AI Data
     useEffect(() => {
         const fetchHolds = async () => {
             try {
@@ -38,21 +38,22 @@ export default function SprayCanvas({
                     .select('id, detection_data')
                     .limit(1);
 
-                if (error) throw error;
+                let detectionData = [];
 
-                if (!walls || walls.length === 0) {
-                    console.log("⚠️  No wall found in database");
-                    setLoading(false);
-                    return;
+                if (!error && walls && walls.length > 0 && walls[0].detection_data && walls[0].detection_data.length > 0) {
+                    detectionData = walls[0].detection_data;
+                    console.log(`✅ Loaded ${detectionData.length} holds from Supabase`);
+                } else {
+                    console.warn("⚠️ No wall found in DB or empty data. Fallback to AI_DATA (Local JSON).");
+                    detectionData = AI_DATA;
                 }
 
-                // Extract holds from detection_data JSONB
-                const detectionData = walls[0].detection_data || [];
-                console.log(`✅ Loaded ${detectionData.length} holds from Supabase`);
-
                 setAllHolds(detectionData);
+
             } catch (err) {
                 console.error("❌ Error fetching holds:", err);
+                // Last ditch fallback
+                setAllHolds(AI_DATA);
             } finally {
                 setLoading(false);
             }
