@@ -47,7 +47,8 @@ export default function CreateRoutePage() {
     const imageUrl = currentWall?.image_url || "/wall_v1.jpg";
 
     const handleAddHold = (hold) => {
-        setHolds([...holds, hold]);
+        setHolds(prev => [...prev, hold]); // Use functional update for safety
+        setActiveHoldId(hold.id);
     };
 
     const [activeHoldId, setActiveHoldId] = useState(null);

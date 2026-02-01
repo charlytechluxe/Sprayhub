@@ -104,8 +104,6 @@ export default function SprayCanvas({
         if (!isEditable) return;
         if (isLongPress) return; // Ignore click if it was a long press
 
-        const existingHold = selectedHoldsMap[polygon.id];
-
         if (!existingHold) {
             // New selection: Default to 'handfoot' (Blue)
             const newHold = {
@@ -114,11 +112,13 @@ export default function SprayCanvas({
                 y: polygon.y || 0,
                 type: 'handfoot',
                 note: '',
-                contour: polygon.contour
+                contour: polygon.contour,
+                holes: polygon.holes // Ensure holes are passed if present
             };
+            console.log("Adding new hold:", newHold);
             onAddHold(newHold);
-            // Notify parent to show inspector
-            if (onUpdateHold) onUpdateHold(newHold.id, newHold, true); // true = focused
+            // DO NOT call onUpdateHold here to avoid state race condition in parent
+            // Parent should handle focusing the new hold if desired.
         } else {
             // Existing selection: Cycle Type
             const currentIndex = CYCLE_ORDER.indexOf(existingHold.type);
@@ -126,6 +126,7 @@ export default function SprayCanvas({
             const nextType = CYCLE_ORDER[nextIndex];
 
             const updatedHold = { ...existingHold, type: nextType };
+            console.log("Updating hold:", updatedHold);
             onUpdateHold(existingHold.id, updatedHold, true); // true = focused
         }
     };
