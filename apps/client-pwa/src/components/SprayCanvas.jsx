@@ -26,6 +26,7 @@ export default function SprayCanvas({
     const [allHolds, setAllHolds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [hasError, setHasError] = useState(false);
 
     // Fetch ecosystem holds from Supabase
     useEffect(() => {
@@ -147,10 +148,18 @@ export default function SprayCanvas({
                                     </div>
                                 )}
                                 <img
-                                    src={imageUrl}
+                                    src={hasError ? "/wall_v1.jpg" : imageUrl}
                                     alt="Spray Wall"
                                     className="w-full h-full object-cover select-none pointer-events-none"
                                     onLoad={() => setImageLoaded(true)}
+                                    onError={() => {
+                                        if (!hasError) {
+                                            setHasError(true);
+                                            setImageLoaded(false); // Reset to show spinner while fallback loads, or keep true if fallback is instant. 
+                                            // Actually, if we switch src, we should wait for onLoad again.
+                                            // But safe to just setHasError and let the new src trigger onLoad.
+                                        }
+                                    }}
                                     loading="eager"
                                     style={{ opacity: imageLoaded ? 1 : 0 }}
                                 />
