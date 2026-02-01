@@ -72,14 +72,14 @@ export default function RoutesPage() {
     }, []);
 
     const filteredRoutes = routes.filter(r =>
-        r.name.toLowerCase().includes(search.toLowerCase())
+        (r.name || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (
         <div className="p-6 pb-24">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Explorer</h1>
-                <button className="btn-touch bg-zinc-900 border border-zinc-800 p-2">
+                <button className="btn-touch w-10 h-10 bg-surface/50 border border-white/5 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-surface/80 transition-all shadow-lg">
                     <Filter size={20} />
                 </button>
             </div>
