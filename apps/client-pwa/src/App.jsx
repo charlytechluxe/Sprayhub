@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage'; // New Import
+import WallEditorPage from './pages/WallEditorPage';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
@@ -182,6 +183,7 @@ export default function App() {
                     <Route path="/create" element={<CreateRoutePage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/poster" element={<PosterPage />} />
+                    <Route path="/admin/editor" element={<WallEditorPage />} />
                 </Routes>
                 <BottomNav />
             </div>
