@@ -17,6 +17,7 @@ import {
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { segmentWallImage } from './lib/replicate';
+import { TrainingView } from './TrainingView';
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -52,6 +53,13 @@ export default function App() {
                     />
                     <div className="pt-4 mt-4 border-t border-zinc-800">
                         <NavItem
+                            icon={<FolderKanban size={20} />}
+                            label="Gestion Entraînement"
+                            active={activeTab === 'training'}
+                            onClick={() => setActiveTab('training')}
+                            badge="NEW"
+                        />
+                        <NavItem
                             icon={<Settings size={20} />}
                             label="Configuration"
                             active={activeTab === 'config'}
@@ -85,6 +93,7 @@ export default function App() {
                     {activeTab === 'dashboard' && <DashboardView />}
                     {activeTab === 'moderation' && <ModerationView />}
                     {activeTab === 'wall' && <WallView />}
+                    {activeTab === 'training' && <TrainingView />}
                     {activeTab === 'config' && (
                         <div className="flex flex-col items-center justify-center h-full text-zinc-600">
                             <p className="text-sm italic">Coming soon</p>

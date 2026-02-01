@@ -8,6 +8,7 @@ import RoutesPage from './pages/RoutesPage';
 import CreateRoutePage from './pages/CreateRoutePage';
 import RouteDetailPage from './pages/RouteDetailPage';
 import PosterPage from './pages/PosterPage';
+import TrainingPlanDetailPage from './pages/TrainingPlanDetailPage';
 
 function cn(...inputs) {
     return twMerge(clsx(inputs));
@@ -20,6 +21,8 @@ import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage'; // New Import
 import WallEditorPage from './pages/WallEditorPage';
 import { useNavigate } from 'react-router-dom';
+
+import TrainingPlanDetailPage from './pages/TrainingPlanDetailPage';
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -190,6 +193,7 @@ export default function App() {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/poster" element={<PosterPage />} />
                     <Route path="/admin/editor" element={<WallEditorPage />} />
+                    <Route path="/plan/:id" element={<TrainingPlanDetailPage />} />
                 </Routes>
                 <BottomNav />
             </div>

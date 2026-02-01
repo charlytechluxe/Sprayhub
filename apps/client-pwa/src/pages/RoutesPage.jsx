@@ -18,11 +18,13 @@ export default function RoutesPage() {
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [routes, setRoutes] = useState([]);
+    const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
+                // ... (Existing route fetch logic) ...
                 // Try fetching from the stats view first
                 let { data, error } = await supabase
                     .from('routes_with_stats')
@@ -40,10 +42,11 @@ export default function RoutesPage() {
                     data = basicData;
                 }
 
-                // Fetch User Interactions (Likes & Ascents) so we can highlight them
+                // Fetch User Interactions (Likes & Ascents)
                 const { data: { user } } = await supabase.auth.getUser();
                 let userAppreciations = [];
                 let userAscents = [];
+                let userPlans = [];
 
                 if (user) {
                     const { data: likes } = await supabase.from('likes').select('route_id').eq('user_id', user.id);
@@ -51,7 +54,17 @@ export default function RoutesPage() {
 
                     const { data: ascents } = await supabase.from('ascents').select('route_id').eq('user_id', user.id);
                     userAscents = ascents?.map(a => a.route_id) || [];
+
+                    // Fetch Assigned Plans
+                    const { data: plans } = await supabase
+                        .from('training_folders')
+                        .select('*')
+                        .eq('assigned_user_id', user.id)
+                        .order('created_at', { ascending: false });
+                    userPlans = plans || [];
                 }
+
+                setPlans(userPlans);
 
                 // Merge data
                 const enrichedRoutes = data?.map(r => ({
@@ -83,6 +96,34 @@ export default function RoutesPage() {
                     <Filter size={20} />
                 </button>
             </div>
+
+            {/* Assigned Plans Section */}
+            {plans.length > 0 && (
+                <div className="mb-8">
+                    <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-3">Mes Entraînements</h2>
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6">
+                        {plans.map(plan => (
+                            <Link
+                                key={plan.id}
+                                to={`/plan/${plan.id}`}
+                                className="flex-shrink-0 w-64 bg-surface/80 border border-accent-pink/20 p-5 rounded-3xl relative overflow-hidden group hover:scale-[1.02] transition-transform shadow-lg"
+                            >
+                                <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                                    <Bookmark className="text-accent-pink" size={40} />
+                                </div>
+                                <h3 className="font-black text-xl italic text-white mb-1 group-hover:text-accent-pink transition-colors">{plan.title}</h3>
+                                <p className="text-zinc-400 text-xs font-medium line-clamp-2">{plan.description || "Aucune description"}</p>
+                                <div className="mt-4 flex items-center justify-between">
+                                    <span className="text-[10px] bg-accent-pink/10 text-accent-pink px-2 py-1 rounded-md font-bold uppercase">Assigné par Coach</span>
+                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                                        <ChevronRight size={16} className="text-white" />
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Search */}
             <div className="mb-6 relative">
