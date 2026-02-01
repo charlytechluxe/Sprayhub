@@ -173,18 +173,35 @@ export default function SprayCanvas({
                                         const hold = selectedHoldsMap[poly.id];
                                         const isSelected = !!hold;
 
-                                        // Standardize points string
-                                        const points = poly.contour.map(p => `${p[0] * 1000},${p[1] * 1333.33}`).join(' ');
+                                        // Construct Path Data
+                                        // Outer contour
+                                        let d = `M ${poly.contour[0][0] * 1000} ${poly.contour[0][1] * 1333.33}`;
+                                        for (let i = 1; i < poly.contour.length; i++) {
+                                            d += ` L ${poly.contour[i][0] * 1000} ${poly.contour[i][1] * 1333.33}`;
+                                        }
+                                        d += " Z";
+
+                                        // Inner holes (if any)
+                                        if (poly.holes && poly.holes.length > 0) {
+                                            poly.holes.forEach(hole => {
+                                                d += ` M ${hole[0][0] * 1000} ${hole[0][1] * 1333.33}`;
+                                                for (let i = 1; i < hole.length; i++) {
+                                                    d += ` L ${hole[i][0] * 1000} ${hole[i][1] * 1333.33}`;
+                                                }
+                                                d += " Z";
+                                            });
+                                        }
 
                                         return (
-                                            <polygon
+                                            <path
                                                 key={poly.id}
-                                                points={points}
+                                                d={d}
                                                 onClick={(e) => handlePolygonClick(e, poly)}
                                                 onTouchStart={(e) => handleTouchStart(e, poly)}
                                                 onTouchEnd={(e) => handleTouchEnd(e, poly)}
                                                 className="transition-all duration-100 cursor-pointer"
                                                 fill="transparent"
+                                                fillRule="evenodd"
                                                 pointerEvents="all"
                                                 stroke={isSelected ? TYPE_COLORS[hold.type] : "rgba(255,255,255,0.15)"}
                                                 strokeWidth={isSelected ? "2" : "1"}
