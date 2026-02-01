@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, Share2, MoreVertical, Heart, Bookmark } from 'lucide-react';
+import { ArrowLeft, Share2, MoreVertical, Heart, Bookmark, ChevronRight } from 'lucide-react';
 
 export default function TrainingPlanDetailPage() {
     const { id } = useParams();
@@ -24,28 +24,45 @@ export default function TrainingPlanDetailPage() {
                 setPlan(planData);
 
                 // 2. Fetch Items (Routes)
-                // Note: We need to join with routes table. 
-                // Since Supabase join syntax can be tricky with many-to-many or separate tables,
-                // we'll fetch items first, then fetch routes.
-                const { data: folderItems, error: itemsError } = await supabase
-                    .from('training_folder_items')
-                    .select('*, route:routes(*)')
-                    .eq('folder_id', id)
-                    .order('order_index', { ascending: true });
-
-                if (itemsError) throw itemsError;
-
-                // Map to flat structure if needed, or just use as is
-                setItems(folderItems || []);
+                fetchItems();
 
             } catch (err) {
                 console.error("Error loading plan:", err);
-            } finally {
                 setLoading(false);
             }
         };
 
+        const fetchItems = async () => {
+            const { data: folderItems, error: itemsError } = await supabase
+                .from('training_folder_items')
+                .select('*, route:routes(*)')
+                .eq('folder_id', id)
+                .order('added_at', { ascending: true }); // Use added_at instead of order_index if it doesn't exist
+
+            if (!itemsError) {
+                setItems(folderItems || []);
+            }
+            setLoading(false);
+        };
+
         fetchPlan();
+
+        // Real-time subscription for items
+        const channel = supabase
+            .channel(`folder_items_${id}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'training_folder_items',
+                filter: `folder_id=eq.${id}`
+            }, () => {
+                fetchItems();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [id]);
 
     if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-zinc-500">Chargement...</div>;

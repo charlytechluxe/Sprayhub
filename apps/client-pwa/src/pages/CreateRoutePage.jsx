@@ -30,11 +30,28 @@ export default function CreateRoutePage() {
         async function fetchWall() {
             setLoadingWall(true);
             try {
-                const { data, error } = await supabase.from('walls').select('*').limit(1).maybeSingle();
+                // Try active first
+                let { data, error } = await supabase
+                    .from('walls')
+                    .select('*')
+                    .eq('is_active', true)
+                    .maybeSingle();
+
+                if (!data) {
+                    // Fallback to latest
+                    const { data: latest } = await supabase
+                        .from('walls')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    data = latest;
+                }
+
                 if (data) {
                     setCurrentWall(data);
                 } else {
-                    console.log("No wall found in DB, using default.");
+                    console.log("No wall found in DB.");
                 }
             } catch (err) {
                 console.error("Error fetching wall:", err);
@@ -148,6 +165,7 @@ export default function CreateRoutePage() {
                 ) : (
                     <ErrorBoundary>
                         <SprayCanvas
+                            wallId={currentWall?.id}
                             imageUrl={imageUrl}
                             holds={holds}
                             onAddHold={handleAddHold}

@@ -19,69 +19,97 @@ export default function RoutesPage() {
     const [search, setSearch] = useState('');
     const [routes, setRoutes] = useState([]);
     const [plans, setPlans] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const fetchRoutes = async () => {
+        try {
+            // Try fetching from the stats view first
+            let { data, error } = await supabase
+                .from('routes_with_stats')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-    useEffect(() => {
-        const fetchRoutes = async () => {
-            try {
-                // ... (Existing route fetch logic) ...
-                // Try fetching from the stats view first
-                let { data, error } = await supabase
-                    .from('routes_with_stats')
+            // Fallback if view doesn't exist yet
+            if (error) {
+                console.warn("View 'routes_with_stats' not found, falling back to basic table.");
+                const { data: basicData, error: basicError } = await supabase
+                    .from('routes')
                     .select('*')
                     .order('created_at', { ascending: false });
-
-                // Fallback if view doesn't exist yet
-                if (error) {
-                    console.warn("View 'routes_with_stats' not found, falling back to basic table.");
-                    const { data: basicData, error: basicError } = await supabase
-                        .from('routes')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-                    if (basicError) throw basicError;
-                    data = basicData;
-                }
-
-                // Fetch User Interactions (Likes & Ascents)
-                const { data: { user } } = await supabase.auth.getUser();
-                let userAppreciations = [];
-                let userAscents = [];
-                let userPlans = [];
-
-                if (user) {
-                    const { data: likes } = await supabase.from('likes').select('route_id').eq('user_id', user.id);
-                    userAppreciations = likes?.map(l => l.route_id) || [];
-
-                    const { data: ascents } = await supabase.from('ascents').select('route_id').eq('user_id', user.id);
-                    userAscents = ascents?.map(a => a.route_id) || [];
-
-                    // Fetch Assigned Plans
-                    const { data: plans } = await supabase
-                        .from('training_folders')
-                        .select('*')
-                        .eq('assigned_user_id', user.id)
-                        .order('created_at', { ascending: false });
-                    userPlans = plans || [];
-                }
-
-                setPlans(userPlans);
-
-                // Merge data
-                const enrichedRoutes = data?.map(r => ({
-                    ...r,
-                    isLiked: userAppreciations.includes(r.id),
-                    isSent: userAscents.includes(r.id)
-                })) || [];
-
-                setRoutes(enrichedRoutes);
-            } catch (err) {
-                console.error("Error loading routes:", err);
-            } finally {
-                setLoading(false);
+                if (basicError) throw basicError;
+                data = basicData;
             }
+
+            // Fetch User Interactions (Likes & Ascents)
+            const { data: { user } } = await supabase.auth.getUser();
+            let userAppreciations = [];
+            let userAscents = [];
+            let userPlans = [];
+
+            if (user) {
+                const { data: likes } = await supabase.from('likes').select('route_id').eq('user_id', user.id);
+                userAppreciations = likes?.map(l => l.route_id) || [];
+
+                const { data: ascents } = await supabase.from('ascents').select('route_id').eq('user_id', user.id);
+                userAscents = ascents?.map(a => a.route_id) || [];
+
+                // Fetch Assigned Plans
+                const { data: plans } = await supabase
+                    .from('training_folders')
+                    .select('*')
+                    .eq('assigned_user_id', user.id)
+                    .order('created_at', { ascending: false });
+                userPlans = plans || [];
+            }
+
+            setPlans(userPlans);
+
+            // Merge data
+            const enrichedRoutes = data?.map(r => ({
+                ...r,
+                isLiked: userAppreciations.includes(r.id),
+                isSent: userAscents.includes(r.id)
+            })) || [];
+
+            setRoutes(enrichedRoutes);
+        } catch (err) {
+            console.error("Error loading routes:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchFolders = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: plansData } = await supabase
+            .from('training_folders')
+            .select('*')
+            .eq('assigned_user_id', user.id);
+        setPlans(plansData || []);
+    };
+
+    useEffect(() => {
+        const fetchAll = async () => {
+            setLoading(true);
+            await Promise.all([fetchRoutes(), fetchFolders()]);
+            setLoading(false);
         };
 
-        fetchRoutes();
+        fetchAll();
+
+        const channel = supabase
+            .channel('realtime_routes_list')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'routes'
+            }, () => {
+                fetchRoutes();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const filteredRoutes = routes.filter(r =>

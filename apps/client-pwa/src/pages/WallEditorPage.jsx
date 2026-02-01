@@ -15,9 +15,22 @@ export default function WallEditorPage() {
 
     useEffect(() => {
         const fetchWall = async () => {
+            setLoading(true);
             const { data: walls } = await supabase.from('walls').select('*').limit(1);
             if (walls && walls.length > 0) {
                 setWall(walls[0]);
+
+                // Check for local draft first
+                const savedDraft = localStorage.getItem(`draft_holds_${walls[0].id}`);
+                if (savedDraft) {
+                    const confirmRestore = window.confirm("J'ai trouvé une sauvegarde locale automatique. Voulez-vous la restaurer pour ne pas perdre votre travail ?");
+                    if (confirmRestore) {
+                        setHolds(JSON.parse(savedDraft));
+                        setLoading(false);
+                        return;
+                    }
+                }
+
                 setHolds(walls[0].detection_data || []);
             }
             setLoading(false);
@@ -25,9 +38,16 @@ export default function WallEditorPage() {
         fetchWall();
     }, []);
 
+    // Auto-save to localStorage on every change
+    useEffect(() => {
+        if (wall && holds.length > 0) {
+            localStorage.setItem(`draft_holds_${wall.id}`, JSON.stringify(holds));
+        }
+    }, [holds, wall]);
+
     const handleSave = async () => {
         if (!wall) return;
-        const confirm = window.confirm(`Sauvegarder les ${holds.length} prises ?`);
+        const confirm = window.confirm(`Sauvegarder les ${holds.length} prises ? (Cela écrasera la version en base)`);
         if (!confirm) return;
 
         const { error } = await supabase
@@ -36,7 +56,17 @@ export default function WallEditorPage() {
             .eq('id', wall.id);
 
         if (error) alert("Erreur sauvegarde: " + error.message);
-        else alert("✅ Mur sauvegardé avec succès !");
+        else {
+            alert("✅ Mur sauvegardé avec succès !");
+            localStorage.removeItem(`draft_holds_${wall.id}`); // Clear draft after successful cloud save
+        }
+    };
+
+    const handleClearAll = () => {
+        if (window.confirm("Voulez-vous vraiment TOUT supprimer et recommencer de zéro ?")) {
+            setHolds([]);
+            setSelectedHoldId(null);
+        }
     };
 
     const handleDelete = () => {
@@ -100,9 +130,14 @@ export default function WallEditorPage() {
                     <span className="font-bold text-accent-pink uppercase tracking-widest">Éditeur Chirurgical</span>
                     <span className="text-xs text-zinc-500">{holds.length} prises</span>
                 </div>
-                <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2">
-                    <Save size={16} /> Sauver
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={handleClearAll} className="bg-zinc-800 text-red-500 px-3 py-2 rounded-full border border-red-500/20 hover:bg-red-500/10 transition-colors">
+                        <Trash2 size={16} />
+                    </button>
+                    <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-green-500 transition-all shadow-[0_0_15px_rgba(22,163,74,0.4)]">
+                        <Save size={16} /> Sauver
+                    </button>
+                </div>
             </div>
 
             {/* Toolbar */}

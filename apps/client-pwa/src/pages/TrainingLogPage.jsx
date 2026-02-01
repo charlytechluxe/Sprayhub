@@ -1,21 +1,83 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Trophy, Calendar, Filter, ChevronRight, TrendingUp } from 'lucide-react';
+import { Trophy, Calendar, Filter, ChevronRight, TrendingUp, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TrainingLogPage() {
     const [ascents, setAscents] = useState([]);
+    const [folders, setFolders] = useState([]);
     const [stats, setStats] = useState({ maxGrade: '?', total: 0 });
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchAscents();
+        let folderChannel;
+        let ascentChannel;
+
+        const loadAll = async () => {
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                setLoading(false);
+                return;
+            }
+
+            await Promise.all([fetchAscents(), fetchFolders()]);
+            setLoading(false);
+
+            // Subscribe to Folders
+            folderChannel = supabase
+                .channel('realtime_folders')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'training_folders',
+                    filter: `assigned_user_id=eq.${user.id}`
+                }, () => {
+                    fetchFolders();
+                })
+                .subscribe();
+
+            // Subscribe to Ascents
+            ascentChannel = supabase
+                .channel('realtime_ascents')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'ascents',
+                    filter: `user_id=eq.${user.id}`
+                }, () => {
+                    fetchAscents();
+                })
+                .subscribe();
+        };
+
+        loadAll();
+
+        return () => {
+            if (folderChannel) supabase.removeChannel(folderChannel);
+            if (ascentChannel) supabase.removeChannel(ascentChannel);
+        };
     }, []);
+
+    const fetchFolders = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+            .from('training_folders')
+            .select(`
+                *,
+                items:training_folder_items(count)
+            `)
+            .eq('assigned_user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        setFolders(data || []);
+    };
 
     const fetchAscents = async () => {
         try {
-            setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
@@ -94,6 +156,35 @@ export default function TrainingLogPage() {
                     </p>
                 </div>
             </div>
+
+            {/* Training Folders Section */}
+            {folders.length > 0 && (
+                <section className="mb-8">
+                    <div className="flex justify-between items-center px-2 mb-4">
+                        <h3 className="font-black uppercase tracking-widest text-xs text-zinc-400">Tes Programmes</h3>
+                        <span className="text-[10px] font-black bg-rose-500/20 text-rose-500 px-2 py-0.5 rounded-full uppercase">Coach Assigned</span>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 no-scrollbar">
+                        {folders.map(folder => (
+                            <div
+                                key={folder.id}
+                                onClick={() => navigate(`/plan/${folder.id}`)}
+                                className="flex-shrink-0 w-48 bg-white/5 border border-white/10 rounded-[2rem] p-5 backdrop-blur-xl relative overflow-hidden group active:scale-95 transition-all"
+                            >
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <FolderKanban size={32} />
+                                </div>
+                                <h4 className="font-black text-white text-lg leading-tight mb-2 truncate" title={folder.title}>
+                                    {folder.title}
+                                </h4>
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+                                    <span className="text-zinc-300">{folder.items?.[0]?.count || 0}</span> Blocs assignés
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Ascent List */}
             <div className="space-y-4">

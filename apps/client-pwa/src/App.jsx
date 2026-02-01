@@ -42,16 +42,30 @@ const HomePage = () => {
         async function fetchData() {
             setLoading(true);
             const { count } = await supabase.from('routes').select('*', { count: 'exact', head: true });
-            const { data: routes } = await supabase
+
+            // Try to fetch featured first
+            const { data: featured } = await supabase
                 .from('routes')
                 .select('*')
-                .order('created_at', { ascending: false })
-                .limit(1);
+                .eq('is_featured', true)
+                .maybeSingle();
+
+            if (featured) {
+                setFeaturedRoute(featured);
+            } else {
+                // Fallback to latest
+                const { data: latest } = await supabase
+                    .from('routes')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (latest && latest.length > 0) {
+                    setFeaturedRoute(latest[0]);
+                }
+            }
 
             setStats({ totalRoutes: count || 0 });
-            if (routes && routes.length > 0) {
-                setFeaturedRoute(routes[0]);
-            }
             setLoading(false);
         }
         fetchData();
