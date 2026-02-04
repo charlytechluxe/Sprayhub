@@ -75,38 +75,13 @@ export default function CreateRoutePage() {
 
     const [activeHoldId, setActiveHoldId] = useState(null);
 
-    // ... (rest of logic) ...
-
-    const handleUpdateHold = (id, updatedHold, shouldFocus = false) => {
-        setHolds(holds.map(h => h.id === id ? updatedHold : h));
-        if (shouldFocus) setActiveHoldId(id);
-    };
-
-    const handleRemoveHold = (id) => {
-        setHolds(holds.filter(h => h.id !== id));
-        if (activeHoldId === id) setActiveHoldId(null);
-    };
-
-    const toggleStyle = (style) => {
-        if (styles.includes(style)) {
-            setStyles(styles.filter(s => s !== style));
-        } else {
-            setStyles([...styles, style]);
-        }
-    };
-
-    const activeHold = holds.find(h => h.id === activeHoldId);
-
-    // Close inspector when clicking empty space (this needs canvas support, but for now back button works)
-    // Or we can add a 'bg' click handler in the Inspector backdrop.
-
     const handleSave = async () => {
         if (!name.trim()) {
-            alert("Veuillez donner un nom au bloc.");
+            alert("Veuillez donner un nom au bloc !");
             return;
         }
         if (holds.length === 0) {
-            alert("Veuillez sélectionner au moins une prise.");
+            alert("Veuillez sélectionner au moins une prise !");
             return;
         }
 
@@ -140,12 +115,36 @@ export default function CreateRoutePage() {
             navigate(`/route/${data.id}`);
 
         } catch (err) {
-            console.error("Erreur lors de la sauvegarde :", err);
-            alert("Erreur lors de la sauvegarde. Vérifiez la console.");
+            console.error("Error saving route:", err);
+            alert("Erreur lors de la sauvegarde : " + err.message);
         } finally {
             setIsSaving(false);
         }
     };
+
+    const handleUpdateHold = (id, updatedHold, shouldFocus = false) => {
+        setHolds(holds.map(h => h.id === id ? updatedHold : h));
+        if (shouldFocus) setActiveHoldId(id);
+    };
+
+    const handleRemoveHold = (id) => {
+        setHolds(holds.filter(h => h.id !== id));
+        if (activeHoldId === id) setActiveHoldId(null);
+    };
+
+    const toggleStyle = (style) => {
+        if (styles.includes(style)) {
+            setStyles(styles.filter(s => s !== style));
+        } else {
+            setStyles([...styles, style]);
+        }
+    };
+
+    const activeHold = holds.find(h => h.id === activeHoldId);
+
+    // Close inspector when clicking empty space (this needs canvas support, but for now back button works)
+    // Or we can add a 'bg' click handler in the Inspector backdrop.
+
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -257,21 +256,52 @@ export default function CreateRoutePage() {
                         </button>
                     </div>
                 ) : (
-                    /* 2. DEFAULT TOOLS (Grade Selector) */
-                    <div className="p-4 space-y-4">
-                        {/* Style Selection */}
+                    /* 2. GRADE & STYLE SELECTOR (Default) */
+                    <div className="p-4 space-y-6">
+                        {/* Difficulty Wheel */}
                         <div>
-                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2 block">
-                                Style (optionnel)
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Difficulté</span>
+                                <span className="text-xs font-bold text-white bg-white/10 px-2 py-1 rounded-md">{grade}</span>
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                                {GRADE_COLORS.map((g) => (
+                                    <button
+                                        key={g.name}
+                                        onClick={() => setGrade(g.name)}
+                                        className={`flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all snap-center ${grade === g.name
+                                            ? 'scale-110 shadow-[0_0_15px_currentColor]'
+                                            : 'opacity-50 grayscale scale-90'
+                                            }`}
+                                        style={{
+                                            borderColor: g.hex,
+                                            backgroundColor: grade === g.name ? g.hex : 'transparent',
+                                            color: grade === g.name ? (g.name === 'Blanc' ? 'black' : 'white') : g.hex,
+                                            boxShadow: grade === g.name ? `0 0 15px ${g.hex}60` : 'none'
+                                        }}
+                                    >
+                                        <span className="text-[10px] font-black uppercase">
+                                            {g.name.substring(0, 2)}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Style Tags */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Style</span>
+                                <span className="text-xs font-bold text-zinc-600">{styles.length}/2</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
                                 {STYLES.map(style => (
                                     <button
                                         key={style}
                                         onClick={() => toggleStyle(style)}
-                                        className={`py-2 rounded-xl text-xs font-bold transition-all ${styles.includes(style)
-                                            ? 'bg-accent-pink text-white shadow-[0_0_10px_rgba(255,0,85,0.3)]'
-                                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 ${styles.includes(style)
+                                            ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                                            : 'bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600'
                                             }`}
                                     >
                                         {style}
@@ -279,145 +309,82 @@ export default function CreateRoutePage() {
                                 ))}
                             </div>
                         </div>
-
-                        {/* Grade Selection */}
-                        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
-                            {GRADE_COLORS.map((c) => (
-                                <button
-                                    key={c.name}
-                                    onClick={() => setGrade(c.name)}
-                                    className={`flex-shrink-0 px-4 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${grade === c.name
-                                        ? 'bg-white text-black border-white scale-105 shadow-lg'
-                                        : 'bg-zinc-800 text-zinc-400 border-transparent'
-                                        }`}
-                                    style={{ color: grade === c.name ? 'black' : c.hex }}
-                                >
-                                    {c.name}
-                                </button>
-                            ))}
-                        </div>
-                        <p className="text-center text-zinc-500 text-xs font-medium">
-                            Touchez une prise pour modifier sa couleur ou ajouter une note.
-                        </p>
                     </div>
                 )}
             </div>
-            {/* Legend Modal */}
+            {/* Legend Modal - Improved Clarity */}
             {showLegend && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-4 relative">
+                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-5 relative">
                         <button
                             onClick={() => setShowLegend(false)}
                             className="absolute top-4 right-4 text-zinc-400 hover:text-white"
                         >
-                            <X size={20} />
+                            <X size={24} />
                         </button>
 
-                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                            <HelpCircle size={20} className="text-accent-pink" />
-                            Légende des Prises
-                        </h3>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">
+                                Mode d'emploi
+                            </h3>
+                            <p className="text-zinc-400 text-sm">
+                                Comment créer un bloc ?
+                            </p>
+                        </div>
 
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#00FF00] shadow-[0_0_10px_#00FF00]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Vert</p>
-                                    <p className="text-xs text-zinc-400">Départ (Start)</p>
-                                </div>
+                        <div className="space-y-4 bg-zinc-950/50 p-4 rounded-2xl border border-white/5">
+                            <div className="flex gap-4">
+                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white border border-white/10 shrink-0">1</div>
+                                <p className="text-sm text-zinc-300 leading-tight pt-1">
+                                    <strong className="text-white block mb-1">Sélectionner</strong>
+                                    Appuie sur une prise pour l'ajouter au bloc.
+                                </p>
                             </div>
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#32A9D6] shadow-[0_0_10px_#32A9D6]"></div>
+                            <div className="flex gap-4">
+                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white border border-white/10 shrink-0">2</div>
+                                <p className="text-sm text-zinc-300 leading-tight pt-1">
+                                    <strong className="text-white block mb-1">Changer la couleur</strong>
+                                    Rappuie sur la même prise pour changer son rôle :
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#32A9D6] shadow-[0_0_12px_#32A9D6]"></div>
                                 <div>
                                     <p className="font-bold text-white text-sm">Bleu</p>
-                                    <p className="text-xs text-zinc-400">Main & Pied (Inter)</p>
+                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Main + Pied</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#FFD700] shadow-[0_0_10px_#FFD700]"></div>
+                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#FFD700] shadow-[0_0_12px_#FFD700]"></div>
                                 <div>
                                     <p className="font-bold text-white text-sm">Jaune</p>
-                                    <p className="text-xs text-zinc-400">Pied uniquement</p>
+                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Pied Seul</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#FF0000] shadow-[0_0_10px_#FF0000]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Rouge</p>
-                                    <p className="text-xs text-zinc-400">Arrivée (Top)</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="text-xs text-center text-zinc-500 pt-2 border-t border-white/10">
-                            Appuyez plusieurs fois sur une prise pour changer sa couleur.
-                        </div>
-
-                        <button
-                            onClick={() => setShowLegend(false)}
-                            className="w-full py-3 bg-white text-black font-bold rounded-xl mt-2 active:scale-95 transition-transform"
-                        >
-                            Compris !
-                        </button>
-                    </div>
-                </div>
-            )}
-            {/* Legend Modal */}
-            {showLegend && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-4 relative">
-                        <button
-                            onClick={() => setShowLegend(false)}
-                            className="absolute top-4 right-4 text-zinc-400 hover:text-white"
-                        >
-                            <X size={20} />
-                        </button>
-
-                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                            <HelpCircle size={20} className="text-accent-pink" />
-                            Légende des Prises
-                        </h3>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#00FF00] shadow-[0_0_10px_#00FF00]"></div>
+                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#00FF00] shadow-[0_0_12px_#00FF00]"></div>
                                 <div>
                                     <p className="font-bold text-white text-sm">Vert</p>
-                                    <p className="text-xs text-zinc-400">Départ (Start)</p>
+                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Départ</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#32A9D6] shadow-[0_0_10px_#32A9D6]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Bleu</p>
-                                    <p className="text-xs text-zinc-400">Main & Pied (Inter)</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#FFD700] shadow-[0_0_10px_#FFD700]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Jaune</p>
-                                    <p className="text-xs text-zinc-400">Pied uniquement</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
-                                <div className="w-4 h-4 rounded-full bg-[#FF0000] shadow-[0_0_10px_#FF0000]"></div>
+                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#FF0000] shadow-[0_0_12px_#FF0000]"></div>
                                 <div>
                                     <p className="font-bold text-white text-sm">Rouge</p>
-                                    <p className="text-xs text-zinc-400">Arrivée (Top)</p>
+                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Top</p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="text-xs text-center text-zinc-500 pt-2 border-t border-white/10">
-                            Appuyez plusieurs fois sur une prise pour changer sa couleur.
                         </div>
 
                         <button
                             onClick={() => setShowLegend(false)}
-                            className="w-full py-3 bg-white text-black font-bold rounded-xl mt-2 active:scale-95 transition-transform"
+                            className="w-full py-3.5 bg-accent-pink text-white font-black uppercase tracking-widest rounded-xl shadow-lg shadow-rose-500/20 active:scale-95 transition-transform"
                         >
-                            Compris !
+                            Compris, on grimpe !
                         </button>
                     </div>
                 </div>
