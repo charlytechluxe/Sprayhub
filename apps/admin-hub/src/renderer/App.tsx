@@ -22,6 +22,7 @@ import { segmentWallImage } from './lib/replicate';
 import { TrainingView } from './TrainingView';
 import { SurgicalEditor } from './SurgicalEditor';
 import { PosterView } from './PosterView';
+import { ConfigView } from './ConfigView';
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -105,11 +106,7 @@ export default function App() {
                     {activeTab === 'wall' && <WallView />}
                     {activeTab === 'training' && <TrainingView />}
                     {activeTab === 'poster' && <PosterView />}
-                    {activeTab === 'config' && (
-                        <div className="flex flex-col items-center justify-center h-full text-zinc-600">
-                            <p className="text-sm italic">Coming soon</p>
-                        </div>
-                    )}
+                    {activeTab === 'config' && <ConfigView />}
                 </div>
             </main>
         </div>
