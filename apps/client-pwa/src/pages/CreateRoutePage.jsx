@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, X, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
+import { Save, X, ChevronLeft, ChevronRight, Hash, HelpCircle } from 'lucide-react';
 import SprayCanvas from '../components/SprayCanvas';
 import { supabase } from '../lib/supabase';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -28,6 +28,8 @@ export default function CreateRoutePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [currentWall, setCurrentWall] = useState(null);
     const [loadingWall, setLoadingWall] = useState(true);
+    const [showLegend, setShowLegend] = useState(false);
+
 
     useEffect(() => {
         async function fetchWall() {
@@ -160,6 +162,12 @@ export default function CreateRoutePage() {
                     onChange={(e) => setName(e.target.value)}
                 />
                 <button
+                    onClick={() => setShowLegend(true)}
+                    className="btn-touch text-zinc-400 mr-2"
+                >
+                    <HelpCircle size={24} />
+                </button>
+                <button
                     onClick={handleSave}
                     disabled={isSaving}
                     className="btn-touch text-accent-pink font-bold disabled:opacity-50"
@@ -262,8 +270,8 @@ export default function CreateRoutePage() {
                                         key={style}
                                         onClick={() => toggleStyle(style)}
                                         className={`py-2 rounded-xl text-xs font-bold transition-all ${styles.includes(style)
-                                                ? 'bg-accent-pink text-white shadow-[0_0_10px_rgba(255,0,85,0.3)]'
-                                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                            ? 'bg-accent-pink text-white shadow-[0_0_10px_rgba(255,0,85,0.3)]'
+                                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                                             }`}
                                     >
                                         {style}
@@ -294,6 +302,126 @@ export default function CreateRoutePage() {
                     </div>
                 )}
             </div>
+            {/* Legend Modal */}
+            {showLegend && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-4 relative">
+                        <button
+                            onClick={() => setShowLegend(false)}
+                            className="absolute top-4 right-4 text-zinc-400 hover:text-white"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <HelpCircle size={20} className="text-accent-pink" />
+                            Légende des Prises
+                        </h3>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#00FF00] shadow-[0_0_10px_#00FF00]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Vert</p>
+                                    <p className="text-xs text-zinc-400">Départ (Start)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#32A9D6] shadow-[0_0_10px_#32A9D6]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Bleu</p>
+                                    <p className="text-xs text-zinc-400">Main & Pied (Inter)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#FFD700] shadow-[0_0_10px_#FFD700]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Jaune</p>
+                                    <p className="text-xs text-zinc-400">Pied uniquement</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#FF0000] shadow-[0_0_10px_#FF0000]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Rouge</p>
+                                    <p className="text-xs text-zinc-400">Arrivée (Top)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="text-xs text-center text-zinc-500 pt-2 border-t border-white/10">
+                            Appuyez plusieurs fois sur une prise pour changer sa couleur.
+                        </div>
+
+                        <button
+                            onClick={() => setShowLegend(false)}
+                            className="w-full py-3 bg-white text-black font-bold rounded-xl mt-2 active:scale-95 transition-transform"
+                        >
+                            Compris !
+                        </button>
+                    </div>
+                </div>
+            )}
+            {/* Legend Modal */}
+            {showLegend && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-4 relative">
+                        <button
+                            onClick={() => setShowLegend(false)}
+                            className="absolute top-4 right-4 text-zinc-400 hover:text-white"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <HelpCircle size={20} className="text-accent-pink" />
+                            Légende des Prises
+                        </h3>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#00FF00] shadow-[0_0_10px_#00FF00]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Vert</p>
+                                    <p className="text-xs text-zinc-400">Départ (Start)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#32A9D6] shadow-[0_0_10px_#32A9D6]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Bleu</p>
+                                    <p className="text-xs text-zinc-400">Main & Pied (Inter)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#FFD700] shadow-[0_0_10px_#FFD700]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Jaune</p>
+                                    <p className="text-xs text-zinc-400">Pied uniquement</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl border border-white/5">
+                                <div className="w-4 h-4 rounded-full bg-[#FF0000] shadow-[0_0_10px_#FF0000]"></div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Rouge</p>
+                                    <p className="text-xs text-zinc-400">Arrivée (Top)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="text-xs text-center text-zinc-500 pt-2 border-t border-white/10">
+                            Appuyez plusieurs fois sur une prise pour changer sa couleur.
+                        </div>
+
+                        <button
+                            onClick={() => setShowLegend(false)}
+                            className="w-full py-3 bg-white text-black font-bold rounded-xl mt-2 active:scale-95 transition-transform"
+                        >
+                            Compris !
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
