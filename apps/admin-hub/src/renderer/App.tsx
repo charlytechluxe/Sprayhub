@@ -13,7 +13,8 @@ import {
     X,
     Edit,
     Upload,
-    PenTool
+    PenTool,
+    FileImage
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
@@ -62,6 +63,12 @@ export default function App() {
                             badge="NEW"
                         />
                         <NavItem
+                            icon={<FileImage size={20} />}
+                            label="Créer Affiche"
+                            active={activeTab === 'poster'}
+                            onClick={() => setActiveTab('poster')}
+                        />
+                        <NavItem
                             icon={<Settings size={20} />}
                             label="Configuration"
                             active={activeTab === 'config'}
@@ -96,6 +103,7 @@ export default function App() {
                     {activeTab === 'moderation' && <ModerationView />}
                     {activeTab === 'wall' && <WallView />}
                     {activeTab === 'training' && <TrainingView />}
+                    {activeTab === 'poster' && <PosterView />}
                     {activeTab === 'config' && (
                         <div className="flex flex-col items-center justify-center h-full text-zinc-600">
                             <p className="text-sm italic">Coming soon</p>
