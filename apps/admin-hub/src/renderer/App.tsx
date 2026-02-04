@@ -14,7 +14,8 @@ import {
     Edit,
     Upload,
     PenTool,
-    FileImage
+    FileImage,
+    Plus
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
@@ -23,6 +24,7 @@ import { TrainingView } from './TrainingView';
 import { SurgicalEditor } from './SurgicalEditor';
 import { PosterView } from './PosterView';
 import { ConfigView } from './ConfigView';
+import { CreateRouteView } from './CreateRouteView';
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -49,6 +51,12 @@ export default function App() {
                         label="Modération / Blocs"
                         active={activeTab === 'moderation'}
                         onClick={() => setActiveTab('moderation')}
+                    />
+                    <NavItem
+                        icon={<Plus size={20} />}
+                        label="Créer un Bloc"
+                        active={activeTab === 'create'}
+                        onClick={() => setActiveTab('create')}
                     />
                     <NavItem
                         icon={<ImageIcon size={20} />}
@@ -103,6 +111,7 @@ export default function App() {
                 <div className="flex-1 overflow-y-auto p-8">
                     {activeTab === 'dashboard' && <DashboardView />}
                     {activeTab === 'moderation' && <ModerationView />}
+                    {activeTab === 'create' && <CreateRouteView />}
                     {activeTab === 'wall' && <WallView />}
                     {activeTab === 'training' && <TrainingView />}
                     {activeTab === 'poster' && <PosterView />}
