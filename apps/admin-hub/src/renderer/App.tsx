@@ -88,9 +88,9 @@ export default function App() {
                 </nav>
 
                 <div className="p-4 border-t border-zinc-800 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-xs">CP</div>
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-xs">CA</div>
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-xs font-bold truncate">Coach Charly</p>
+                        <p className="text-xs font-bold truncate">Coach Alexis</p>
                         <p className="text-[10px] text-zinc-500 truncate">Administrateur</p>
                     </div>
                 </div>
