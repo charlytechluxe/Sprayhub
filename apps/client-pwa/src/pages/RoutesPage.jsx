@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Heart, ChevronRight, Bookmark } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
+import FilterModal from '../components/FilterModal';
 
 const GRADE_HEX = {
     'Orange': '#FF8C00',
@@ -20,6 +21,14 @@ export default function RoutesPage() {
     const [routes, setRoutes] = useState([]);
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Filters
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filters, setFilters] = useState({
+        grades: [],
+        styles: [],
+        author: ''
+    });
     const fetchRoutes = async () => {
         try {
             // Try fetching from the stats view first
@@ -113,18 +122,58 @@ export default function RoutesPage() {
         };
     }, []);
 
-    const filteredRoutes = routes.filter(r =>
-        (r.name || '').toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredRoutes = routes.filter(r => {
+        // Filter by name (search)
+        if (search && !(r.name || '').toLowerCase().includes(search.toLowerCase())) {
+            return false;
+        }
+
+        // Filter by grade
+        if (filters.grades.length > 0 && !filters.grades.includes(r.grade)) {
+            return false;
+        }
+
+        // Filter by style
+        if (filters.styles.length > 0) {
+            const hasStyle = filters.styles.some(style =>
+                r.style?.includes(style)
+            );
+            if (!hasStyle) return false;
+        }
+
+        // Filter by author (username)
+        if (filters.author && r.author_username !== filters.author) {
+            return false;
+        }
+
+        return true;
+    });
+
+    const activeFilterCount = filters.grades.length + filters.styles.length + (filters.author ? 1 : 0);
 
     return (
         <div className="p-6 pb-24">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Explorer</h1>
-                <button className="btn-touch w-10 h-10 bg-surface/50 border border-white/5 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-surface/80 transition-all shadow-lg">
+                <button
+                    onClick={() => setIsFilterOpen(true)}
+                    className="btn-touch w-10 h-10 bg-surface/50 border border-white/5 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-surface/80 transition-all shadow-lg relative"
+                >
                     <Filter size={20} />
+                    {activeFilterCount > 0 && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-accent-pink rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                            {activeFilterCount}
+                        </div>
+                    )}
                 </button>
             </div>
+
+            <FilterModal
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                filters={filters}
+                onApplyFilters={setFilters}
+            />
 
             {/* Assigned Plans Section */}
             {plans.length > 0 && (

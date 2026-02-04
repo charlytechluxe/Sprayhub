@@ -16,10 +16,13 @@ const GRADE_COLORS = [
     { name: 'Projet', hex: '#a1a1aa' },
 ];
 
+const STYLES = ['Dynamique', 'Physique', 'Technique', 'Résistance'];
+
 export default function CreateRoutePage() {
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [grade, setGrade] = useState('Projet');
+    const [styles, setStyles] = useState([]);
     const [holds, setHolds] = useState([]);
     const [selectionMode, setSelectionMode] = useState('handfoot');
     const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +85,14 @@ export default function CreateRoutePage() {
         if (activeHoldId === id) setActiveHoldId(null);
     };
 
+    const toggleStyle = (style) => {
+        if (styles.includes(style)) {
+            setStyles(styles.filter(s => s !== style));
+        } else {
+            setStyles([...styles, style]);
+        }
+    };
+
     const activeHold = holds.find(h => h.id === activeHoldId);
 
     // Close inspector when clicking empty space (this needs canvas support, but for now back button works)
@@ -109,6 +120,7 @@ export default function CreateRoutePage() {
             const routeData = {
                 name: name.trim(),
                 grade: grade,
+                style: styles,
                 holds: holds,
                 wall_id: currentWall?.id, // Optional if wall_id is nullable, but recommended
                 author_id: user.id
@@ -239,6 +251,28 @@ export default function CreateRoutePage() {
                 ) : (
                     /* 2. DEFAULT TOOLS (Grade Selector) */
                     <div className="p-4 space-y-4">
+                        {/* Style Selection */}
+                        <div>
+                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2 block">
+                                Style (optionnel)
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {STYLES.map(style => (
+                                    <button
+                                        key={style}
+                                        onClick={() => toggleStyle(style)}
+                                        className={`py-2 rounded-xl text-xs font-bold transition-all ${styles.includes(style)
+                                                ? 'bg-accent-pink text-white shadow-[0_0_10px_rgba(255,0,85,0.3)]'
+                                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                            }`}
+                                    >
+                                        {style}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Grade Selection */}
                         <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
                             {GRADE_COLORS.map((c) => (
                                 <button
