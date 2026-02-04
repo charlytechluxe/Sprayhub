@@ -56,6 +56,9 @@ export default function RouteDetailPage() {
             setLikesCount(likes || 0);
             setAscentsCount(ascents || 0);
 
+            // Fetch vote stats
+            await fetchVoteStats();
+
         } catch (err) {
             console.error("Error fetching route:", err);
         } finally {
@@ -67,6 +70,10 @@ export default function RouteDetailPage() {
     const [isSent, setIsSent] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
     const [ascentsCount, setAscentsCount] = useState(0);
+
+    // Voting system
+    const [voteStats, setVoteStats] = useState(null);
+    const [userVote, setUserVote] = useState(null);
 
     const handleDelete = async () => {
         if (!window.confirm("Voulez-vous vraiment supprimer ce bloc ? Cette action est irréversible.")) return;
@@ -93,6 +100,82 @@ export default function RouteDetailPage() {
         // Check Ascent
         const { data: ascentData } = await supabase.from('ascents').select('id').eq('route_id', id).eq('user_id', user.id).single();
         if (ascentData) setIsSent(true);
+
+        // Check user's vote
+        const { data: voteData } = await supabase.from('grade_votes').select('suggested_grade').eq('route_id', id).eq('user_id', user.id).single();
+        if (voteData) setUserVote(voteData.suggested_grade);
+    };
+
+    const fetchVoteStats = async () => {
+        try {
+            const { data: votes, error } = await supabase
+                .from('grade_votes')
+                .select('suggested_grade')
+                .eq('route_id', id);
+
+            if (error) throw error;
+
+            if (votes && votes.length > 0) {
+                // Count votes by grade
+                const voteCounts = {};
+                votes.forEach(v => {
+                    voteCounts[v.suggested_grade] = (voteCounts[v.suggested_grade] || 0) + 1;
+                });
+
+                // Find majority
+                const sortedGrades = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
+                const [majorityGrade, majorityCount] = sortedGrades[0];
+
+                setVoteStats({
+                    total: votes.length,
+                    majority: majorityGrade,
+                    majorityCount: majorityCount,
+                    percentage: Math.round((majorityCount / votes.length) * 100)
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching vote stats:', err);
+        }
+    };
+
+    const handleVote = async (direction) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { navigate('/auth'); return; }
+
+        const GRADE_ORDER = ['Orange', 'Rose', 'Vert', 'Jaune', 'Bleu', 'Rouge', 'Blanc', 'Projet'];
+        const currentIndex = GRADE_ORDER.indexOf(route.grade);
+
+        let newGrade;
+        if (direction === 'easier') {
+            newGrade = GRADE_ORDER[Math.max(0, currentIndex - 1)];
+        } else {
+            newGrade = GRADE_ORDER[Math.min(GRADE_ORDER.length - 1, currentIndex + 1)];
+        }
+
+        try {
+            // Upsert vote (insert or update)
+            const { error } = await supabase
+                .from('grade_votes')
+                .upsert({
+                    route_id: id,
+                    user_id: user.id,
+                    suggested_grade: newGrade
+                }, {
+                    onConflict: 'route_id,user_id'
+                });
+
+            if (error) throw error;
+
+            setUserVote(newGrade);
+            await fetchVoteStats();
+            await fetchRoute(); // Refresh to see if grade was adjusted
+
+            // Haptic feedback
+            if (window.navigator.vibrate) window.navigator.vibrate(50);
+        } catch (err) {
+            console.error('Error voting:', err);
+            alert('Erreur lors du vote');
+        }
     };
 
     const handleLike = async () => {
@@ -148,6 +231,7 @@ export default function RouteDetailPage() {
     if (!route) return <div className="min-h-screen bg-background flex items-center justify-center text-red-500">Bloc introuvable.</div>;
 
     const allHoldIds = Array.isArray(route.holds) ? route.holds.map(h => h.hold_id) : [];
+    const GRADE_ORDER = ['Orange', 'Rose', 'Vert', 'Jaune', 'Bleu', 'Rouge', 'Blanc', 'Projet'];
 
     return (
         <div className="flex flex-col h-screen bg-background text-white overflow-hidden">
@@ -218,6 +302,54 @@ export default function RouteDetailPage() {
                         <CheckCircle size={18} />
                         {isSent ? 'Validé ✓' : 'Croix'}
                     </button>
+                </div>
+
+                {/* Voting Section */}
+                <div className="bg-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wide">
+                            Ce bloc vous semble...
+                        </h3>
+                        {route.grade_adjusted_by_votes && (
+                            <div className="text-[10px] bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-full font-bold">
+                                ⚡ Ajusté par votes
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleVote('easier')}
+                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${userVote && GRADE_ORDER.indexOf(userVote) < GRADE_ORDER.indexOf(route.grade)
+                                    ? 'bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]'
+                                    : 'bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20'
+                                }`}
+                        >
+                            👍 Plus facile
+                        </button>
+                        <button
+                            onClick={() => handleVote('harder')}
+                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${userVote && GRADE_ORDER.indexOf(userVote) > GRADE_ORDER.indexOf(route.grade)
+                                    ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.3)]'
+                                    : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                                }`}
+                        >
+                            👎 Plus dur
+                        </button>
+                    </div>
+
+                    {voteStats && voteStats.total > 0 && (
+                        <div className="text-xs text-zinc-500 text-center">
+                            {voteStats.total} vote{voteStats.total > 1 ? 's' : ''} •
+                            Majorité : <span className="text-zinc-400 font-bold">{voteStats.majority}</span> ({voteStats.percentage}%)
+                        </div>
+                    )}
+
+                    {userVote && (
+                        <div className="text-[10px] text-zinc-600 text-center">
+                            Vous avez voté : {userVote}
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl p-4 flex items-center justify-between shadow-inner">
