@@ -230,7 +230,7 @@ export default function RouteDetailPage() {
     if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-zinc-500">Chargement...</div>;
     if (!route) return <div className="min-h-screen bg-background flex items-center justify-center text-red-500">Bloc introuvable.</div>;
 
-    const allHoldIds = Array.isArray(route.holds) ? route.holds.map(h => h.hold_id) : [];
+    const allHoldIds = Array.isArray(route.holds) ? route.holds.map(h => h.id) : [];
     const GRADE_ORDER = ['Orange', 'Rose', 'Vert', 'Jaune', 'Bleu', 'Rouge', 'Blanc', 'Projet'];
 
     return (

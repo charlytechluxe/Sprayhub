@@ -48,7 +48,7 @@ export default function RoutesPage() {
                 console.warn("View 'routes_with_stats' not found, falling back to basic table.");
                 const { data: basicData, error: basicError } = await supabase
                     .from('routes')
-                    .select('*')
+                    .select('*, author:profiles!author_id(username)')
                     .order('created_at', { ascending: false });
                 if (basicError) throw basicError;
                 data = basicData;
@@ -248,13 +248,13 @@ export default function RoutesPage() {
                                 <div className="flex items-center gap-5">
                                     <div
                                         className="w-16 h-16 rounded-[22px] flex flex-col items-center justify-center shadow-2xl relative border-2 border-black/20 overflow-hidden"
-                                        style={{ backgroundColor: GRADE_HEX[route.grade] || '#333' }}
+                                        style={{ backgroundColor: route.grade ? GRADE_HEX[route.grade] : '#333' }}
                                     >
                                         <span className={cn(
                                             "text-xs font-black uppercase tracking-tighter italic",
-                                            ['Blanc', 'Jaune', 'Orange', 'Rose'].includes(route.grade) ? 'text-black' : 'text-white'
+                                            route.grade && ['Blanc', 'Jaune', 'Orange', 'Rose'].includes(route.grade) ? 'text-black' : 'text-white'
                                         )}>
-                                            {route.grade.substring(0, 2)}
+                                            {route.grade ? route.grade.substring(0, 2) : '??'}
                                         </span>
                                         <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
 
@@ -266,10 +266,16 @@ export default function RoutesPage() {
                                         <h3 className="font-black text-xl italic uppercase tracking-tighter text-white group-hover:text-accent-pink transition-colors truncate">
                                             {route.name || "SANS NOM"}
                                         </h3>
-                                        <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-1">
-                                            <span className="text-zinc-400">{route.holds?.length || 0} prises</span>
-                                            <span className="w-1 h-1 bg-zinc-800 rounded-full"></span>
-                                            <span>{new Date(route.created_at).toLocaleDateString()}</span>
+                                        <div className="flex flex-col gap-1 mt-1">
+                                            <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+                                                <span className="text-zinc-400">{route.holds?.length || 0} prises</span>
+                                                <span className="w-1 h-1 bg-zinc-800 rounded-full"></span>
+                                                <span>{new Date(route.created_at).toLocaleDateString()}</span>
+                                            </div>
+                                            <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                                                <span className="w-1 h-1 bg-accent-pink rounded-full opacity-50" />
+                                                Par {route.author?.username || 'Inconnu'}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
