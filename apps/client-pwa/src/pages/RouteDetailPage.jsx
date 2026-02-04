@@ -181,7 +181,7 @@ export default function RouteDetailPage() {
 
                 <div className="w-full h-full">
                     <SprayCanvas
-                        holds={route.holds?.map(h => ({ id: h.hold_id, type: h.type })) || []}
+                        holds={route.holds || []}
                         wallId={route.wall_id}
                         imageUrl={route.wall?.image_url}
                         routeMode={true}
