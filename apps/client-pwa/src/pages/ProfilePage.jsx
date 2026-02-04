@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Camera, User, Save, Loader2, LogOut } from 'lucide-react';
+import { validateContent } from '../lib/profanity';
 
 export default function ProfilePage() {
     const navigate = useNavigate();
@@ -44,6 +45,15 @@ export default function ProfilePage() {
     async function updateProfile() {
         try {
             setLoading(true);
+
+            try {
+                validateContent(username, "Le nom d'utilisateur");
+            } catch (e) {
+                alert(e.message);
+                setLoading(false);
+                return;
+            }
+
             const updates = {
                 username: username,
                 updated_at: new Date(),

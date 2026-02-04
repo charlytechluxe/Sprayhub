@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Apple, Chrome, ArrowRight, Loader2, User } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { validateContent } from '../lib/profanity';
 
 function cn(...inputs) {
     return twMerge(clsx(inputs));
@@ -63,6 +64,8 @@ export default function AuthPage() {
                 if (password !== confirmPassword) {
                     throw new Error('Les mots de passe ne correspondent pas');
                 }
+
+                validateContent(username, "Le nom d'utilisateur");
 
                 // Check if username is already taken
                 const { data: existingUser } = await supabase

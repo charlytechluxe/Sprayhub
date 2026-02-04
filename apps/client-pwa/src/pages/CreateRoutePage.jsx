@@ -4,6 +4,7 @@ import { Save, X, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 import SprayCanvas from '../components/SprayCanvas';
 import { supabase } from '../lib/supabase';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { validateContent } from '../lib/profanity';
 
 const GRADE_COLORS = [
     { name: 'Orange', hex: '#FF8C00' }, // Très Facile
@@ -78,6 +79,14 @@ export default function CreateRoutePage() {
             alert("Veuillez donner un nom au bloc !");
             return;
         }
+
+        try {
+            validateContent(name, "Le nom du bloc");
+        } catch (e) {
+            alert(e.message);
+            return;
+        }
+
         if (holds.length === 0) {
             alert("Veuillez sélectionner au moins une prise !");
             return;
