@@ -281,20 +281,19 @@ export default function CreateRoutePage() {
                                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Difficulté</span>
                                 <span className="text-xs font-bold text-white bg-white/10 px-2 py-1 rounded-md">{grade}</span>
                             </div>
-                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                            <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide snap-x px-2">
                                 {GRADE_COLORS.map((g) => (
                                     <button
                                         key={g.name}
                                         onClick={() => setGrade(g.name)}
-                                        className={`flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all snap-center ${grade === g.name
-                                            ? 'scale-110 shadow-[0_0_15px_currentColor]'
-                                            : 'opacity-50 grayscale scale-90'
+                                        className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 snap-center ${grade === g.name
+                                            ? 'scale-110 ring-4 ring-white/50 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-10'
+                                            : 'scale-90 opacity-60 hover:opacity-100 hover:scale-100'
                                             }`}
                                         style={{
-                                            borderColor: g.hex,
-                                            backgroundColor: grade === g.name ? g.hex : 'transparent',
-                                            color: grade === g.name ? (g.name === 'Blanc' ? 'black' : 'white') : g.hex,
-                                            boxShadow: grade === g.name ? `0 0 15px ${g.hex}60` : 'none'
+                                            backgroundColor: g.hex,
+                                            color: ['Blanc', 'Jaune', 'Orange', 'Rose'].includes(g.name) ? 'black' : 'white',
+                                            boxShadow: grade === g.name ? `0 0 20px ${g.hex}` : 'none'
                                         }}
                                     >
                                         <span className="text-[10px] font-black uppercase">
