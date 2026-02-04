@@ -160,20 +160,6 @@ export default function ProfilePage() {
 
                 <div className="h-px bg-zinc-900 my-8" />
 
-                {/* Admin Tools for Coach Charly */}
-                <div className="space-y-4">
-                    <h2 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest px-1">Outils Coach</h2>
-                    <button
-                        onClick={() => navigate('/admin/editor')}
-                        className="w-full bg-blue-600/10 text-blue-400 font-bold h-12 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all border border-blue-600/20 hover:bg-blue-600/20"
-                    >
-                        <Camera size={18} />
-                        Éditeur de Mur (Détourage)
-                    </button>
-                </div>
-
-                <div className="h-px bg-zinc-900 my-8" />
-
                 <button
                     onClick={handleSignOut}
                     className="w-full bg-zinc-900 text-red-400 font-bold h-12 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all border border-zinc-800 hover:bg-zinc-800"
