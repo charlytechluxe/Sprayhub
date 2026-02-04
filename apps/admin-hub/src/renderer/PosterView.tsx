@@ -1,7 +1,7 @@
 import { FileImage } from 'lucide-react';
 
 function PosterView() {
-    const posterUrl = 'https://sprayhub.vercel.app/poster';
+    const posterUrl = 'https://sprayhub-coach.vercel.app/poster';
 
     const handleOpenInBrowser = () => {
         window.open(posterUrl, '_blank');
