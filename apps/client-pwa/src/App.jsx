@@ -13,7 +13,6 @@ import PosterPage from './pages/PosterPage';
 import TrainingPlanDetailPage from './pages/TrainingPlanDetailPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
-import WallEditorPage from './pages/WallEditorPage';
 import TrainingLogPage from './pages/TrainingLogPage';
 import InstallPrompt from './components/InstallPrompt';
 
@@ -214,7 +213,6 @@ export default function App() {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/poster" element={<PosterPage />} />
                     <Route path="/training" element={<TrainingLogPage />} />
-                    <Route path="/admin/editor" element={<WallEditorPage />} />
                     <Route path="/plan/:id" element={<TrainingPlanDetailPage />} />
                 </Routes>
                 <BottomNav />
