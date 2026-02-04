@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Apple, Chrome, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, Apple, Chrome, ArrowRight, Loader2, User } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -13,8 +13,11 @@ export default function AuthPage() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [username, setUsername] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
     const navigate = useNavigate();
 
     const handleSocialLogin = async (provider) => {
@@ -40,16 +43,66 @@ export default function AuthPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccessMessage(null);
 
         try {
             if (isSignUp) {
-                const { error } = await supabase.auth.signUp({
+                // Validation for signup
+                if (!username || username.length < 3 || username.length > 20) {
+                    throw new Error('Le nom d\'utilisateur doit contenir entre 3 et 20 caractères');
+                }
+
+                if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                    throw new Error('Le nom d\'utilisateur ne peut contenir que des lettres, chiffres et underscores');
+                }
+
+                if (password.length < 8) {
+                    throw new Error('Le mot de passe doit contenir au moins 8 caractères');
+                }
+
+                if (password !== confirmPassword) {
+                    throw new Error('Les mots de passe ne correspondent pas');
+                }
+
+                // Check if username is already taken
+                const { data: existingUser } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .ilike('username', username)
+                    .single();
+
+                if (existingUser) {
+                    throw new Error('Ce nom d\'utilisateur est déjà pris');
+                }
+
+                // Sign up with email confirmation
+                const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        data: {
+                            username: username,
+                            full_name: username, // Use username as default full_name
+                        },
+                        emailRedirectTo: `${window.location.origin}/profile`,
+                    }
                 });
+
                 if (error) throw error;
-                // Ideally show "Check email" message here
-                alert('Vérifiez votre email pour confirmer votre compte !');
+
+                // Check if email confirmation is required
+                if (data?.user && !data.session) {
+                    setSuccessMessage(
+                        `✅ Compte créé avec succès !\n\n` +
+                        `📧 Un email de confirmation a été envoyé à ${email}.\n\n` +
+                        `Cliquez sur le lien dans l'email pour activer votre compte.\n\n` +
+                        `💡 Astuce : Vérifiez vos spams si vous ne voyez pas l'email.`
+                    );
+                } else if (data?.session) {
+                    // Auto-confirmed (dev mode)
+                    setSuccessMessage('✅ Compte créé avec succès !');
+                    setTimeout(() => navigate('/profile'), 2000);
+                }
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
@@ -123,6 +176,26 @@ export default function AuthPage() {
                             className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
                         />
                     </div>
+
+                    {/* Username field - only for signup */}
+                    {isSignUp && (
+                        <div className="relative">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Nom d'utilisateur (3-20 caractères)"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required={isSignUp}
+                                minLength={3}
+                                maxLength={20}
+                                pattern="[a-zA-Z0-9_]+"
+                                title="Lettres, chiffres et underscores uniquement"
+                                className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
+                            />
+                        </div>
+                    )}
+
                     <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
                         <input
@@ -131,9 +204,31 @@ export default function AuthPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            minLength={isSignUp ? 8 : undefined}
                             className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
                         />
                     </div>
+
+                    {/* Confirm Password field - only for signup */}
+                    {isSignUp && (
+                        <div className="relative">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+                            <input
+                                type="password"
+                                placeholder="Confirmer le mot de passe"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required={isSignUp}
+                                className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
+                            />
+                        </div>
+                    )}
+
+                    {successMessage && (
+                        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium text-left whitespace-pre-line">
+                            {successMessage}
+                        </div>
+                    )}
 
                     {error && (
                         <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium text-center">
