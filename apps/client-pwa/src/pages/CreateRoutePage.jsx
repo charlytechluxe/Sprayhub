@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, X, ChevronLeft, ChevronRight, Hash, HelpCircle } from 'lucide-react';
+import { Save, X, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 import SprayCanvas from '../components/SprayCanvas';
 import { supabase } from '../lib/supabase';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -28,8 +28,6 @@ export default function CreateRoutePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [currentWall, setCurrentWall] = useState(null);
     const [loadingWall, setLoadingWall] = useState(true);
-    const [showLegend, setShowLegend] = useState(false);
-
 
     useEffect(() => {
         async function fetchWall() {
@@ -142,10 +140,6 @@ export default function CreateRoutePage() {
 
     const activeHold = holds.find(h => h.id === activeHoldId);
 
-    // Close inspector when clicking empty space (this needs canvas support, but for now back button works)
-    // Or we can add a 'bg' click handler in the Inspector backdrop.
-
-
     return (
         <div className="flex flex-col h-screen bg-background">
             {/* Header */}
@@ -161,12 +155,6 @@ export default function CreateRoutePage() {
                     onChange={(e) => setName(e.target.value)}
                 />
                 <button
-                    onClick={() => setShowLegend(true)}
-                    className="btn-touch text-zinc-400 mr-2"
-                >
-                    <HelpCircle size={24} />
-                </button>
-                <button
                     onClick={handleSave}
                     disabled={isSaving}
                     className="btn-touch text-accent-pink font-bold disabled:opacity-50"
@@ -177,6 +165,35 @@ export default function CreateRoutePage() {
 
             {/* Canvas Area */}
             <div className="flex-1 relative overflow-hidden p-4">
+
+                {/* PERSISTENT LEGEND OVERLAY */}
+                <div className="absolute top-6 left-6 z-10 pointer-events-none">
+                    <div className="bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/5 shadow-xl pointer-events-auto">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#00FF00] shadow-[0_0_8px_#00FF00]" />
+                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Départ</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#32A9D6] shadow-[0_0_8px_#32A9D6]" />
+                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Main+Pied</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#FFD700] shadow-[0_0_8px_#FFD700]" />
+                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Pied</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#FF0000] shadow-[0_0_8px_#FF0000]" />
+                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Top</span>
+                            </div>
+                            <div className="h-px bg-white/10 w-full my-0.5"></div>
+                            <p className="text-[9px] text-zinc-400 max-w-[80px] leading-tight text-center">
+                                Tap 2x pour changer
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {loadingWall ? (
                     <div className="flex items-center justify-center h-full">
                         <div className="w-10 h-10 rounded-full border border-zinc-900 border-t-accent-pink animate-spin" />
@@ -219,7 +236,7 @@ export default function CreateRoutePage() {
                             {/* Color/Type Indicator (Click to Cycle) */}
                             <button
                                 onClick={() => {
-                                    // Cycle Type Logic (Duplicate logic, ideally shared)
+                                    // Cycle Type Logic
                                     const CYCLE_ORDER = ['handfoot', 'foot', 'start', 'top'];
                                     const currentIndex = CYCLE_ORDER.indexOf(activeHold.type);
                                     const nextType = CYCLE_ORDER[(currentIndex + 1) % 4];
@@ -312,83 +329,6 @@ export default function CreateRoutePage() {
                     </div>
                 )}
             </div>
-            {/* Legend Modal - Improved Clarity */}
-            {showLegend && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-5 relative">
-                        <button
-                            onClick={() => setShowLegend(false)}
-                            className="absolute top-4 right-4 text-zinc-400 hover:text-white"
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <div className="text-center space-y-2">
-                            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">
-                                Mode d'emploi
-                            </h3>
-                            <p className="text-zinc-400 text-sm">
-                                Comment créer un bloc ?
-                            </p>
-                        </div>
-
-                        <div className="space-y-4 bg-zinc-950/50 p-4 rounded-2xl border border-white/5">
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white border border-white/10 shrink-0">1</div>
-                                <p className="text-sm text-zinc-300 leading-tight pt-1">
-                                    <strong className="text-white block mb-1">Sélectionner</strong>
-                                    Appuie sur une prise pour l'ajouter au bloc.
-                                </p>
-                            </div>
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white border border-white/10 shrink-0">2</div>
-                                <p className="text-sm text-zinc-300 leading-tight pt-1">
-                                    <strong className="text-white block mb-1">Changer la couleur</strong>
-                                    Rappuie sur la même prise pour changer son rôle :
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[#32A9D6] shadow-[0_0_12px_#32A9D6]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Bleu</p>
-                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Main + Pied</p>
-                                </div>
-                            </div>
-                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[#FFD700] shadow-[0_0_12px_#FFD700]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Jaune</p>
-                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Pied Seul</p>
-                                </div>
-                            </div>
-                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[#00FF00] shadow-[0_0_12px_#00FF00]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Vert</p>
-                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Départ</p>
-                                </div>
-                            </div>
-                            <div className="p-3 bg-zinc-800/50 rounded-xl border border-white/5 flex flex-col items-center text-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[#FF0000] shadow-[0_0_12px_#FF0000]"></div>
-                                <div>
-                                    <p className="font-bold text-white text-sm">Rouge</p>
-                                    <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Top</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => setShowLegend(false)}
-                            className="w-full py-3.5 bg-accent-pink text-white font-black uppercase tracking-widest rounded-xl shadow-lg shadow-rose-500/20 active:scale-95 transition-transform"
-                        >
-                            Compris, on grimpe !
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
