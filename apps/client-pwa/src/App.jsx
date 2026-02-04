@@ -71,73 +71,96 @@ const HomePage = () => {
     }, []);
 
     return (
-        <div className="p-6 pb-32">
-            <h1 className="text-4xl font-black mb-8 tracking-tighter uppercase italic bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-                SPRAY<span className="text-accent-pink drop-shadow-[0_0_10px_rgba(255,0,85,0.5)]">HUB</span>
+        <div className="p-6 pb-32 bg-black min-h-screen">
+            <h1 className="text-4xl font-black mb-10 tracking-tighter uppercase italic bg-gradient-to-br from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent">
+                SPRAY<span className="text-accent-pink drop-shadow-[0_0_15px_rgba(251,32,86,0.6)]">HUB</span>
             </h1>
 
             {/* Featured Block */}
-            <div className="relative overflow-hidden bg-surface rounded-[2rem] p-8 border border-white/5 mb-8 aspect-[4/3] flex flex-col justify-end group active:scale-[0.98] transition-transform shadow-2xl shadow-black/50 ring-1 ring-white/10">
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
-                <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                    <div className="w-20 h-20 bg-accent-pink/20 blur-3xl rounded-full absolute -top-10 -right-10 pointer-events-none"></div>
+            <div
+                onClick={() => featuredRoute && navigate(`/route/${featuredRoute.id}`)}
+                className="relative overflow-hidden bg-zinc-900 rounded-[2.5rem] p-8 border border-white/10 mb-10 aspect-[4/3] flex flex-col justify-end group active:scale-[0.97] transition-all cursor-pointer shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)]"
+            >
+                {/* Image Overlay if we had images, but let's use a dynamic gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-pink/10 via-transparent to-zinc-950/90" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+
+                {/* Content */}
+                <div className="relative z-10">
+                    {loading ? (
+                        <div className="h-20 flex items-center text-zinc-600 animate-pulse font-bold italic uppercase tracking-widest text-xs">Recherche du bloc...</div>
+                    ) : featuredRoute ? (
+                        <>
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="bg-accent-pink text-white text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg shadow-accent-pink/20 border border-white/10">
+                                    Dernier Ajout
+                                </span>
+                            </div>
+                            <h2 className="text-4xl font-black italic uppercase tracking-tighter mb-2 text-white drop-shadow-2xl">{featuredRoute.name || "SANS NOM"}</h2>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-accent-pink shadow-[0_0_8px_#FB2056]" />
+                                    <span className="text-xs font-black text-white/90 uppercase italic tracking-tighter">{featuredRoute.grade}</span>
+                                </div>
+                                <div className="w-px h-3 bg-white/20" />
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">
+                                    {Array.isArray(featuredRoute.holds) ? featuredRoute.holds.length : 0} Prises
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <h2 className="text-2xl font-black mb-1 text-zinc-700 italic uppercase">Aucun bloc</h2>
+                            <p className="text-zinc-700 text-xs font-bold uppercase tracking-widest">Le mur attend son premier défi.</p>
+                        </div>
+                    )}
                 </div>
 
-                {loading ? (
-                    <div className="relative z-10 text-zinc-500 animate-pulse">Chargement...</div>
-                ) : featuredRoute ? (
-                    <div className="relative z-10">
-                        <span className="bg-accent-pink text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block shadow-[0_0_15px_rgba(255,0,85,0.4)] border border-white/20">
-                            Dernier Ajout
-                        </span>
-                        <h2 className="text-3xl font-black mb-1 text-white drop-shadow-md">{featuredRoute.name}</h2>
-                        <p className="text-zinc-400 text-sm font-medium">
-                            {featuredRoute.grade} • {Array.isArray(featuredRoute.holds) ? featuredRoute.holds.length : 0} Prises
-                        </p>
-                    </div>
-                ) : (
-                    <div className="relative z-10">
-                        <h2 className="text-2xl font-black mb-1 text-zinc-500">Aucun bloc</h2>
-                        <p className="text-zinc-600 text-sm">Créez le premier bloc maintenant !</p>
-                    </div>
-                )}
+                {/* Decorative Elements */}
+                <div className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/5 flex items-center justify-center text-white/20 group-hover:scale-110 group-hover:text-white transition-all">
+                    <Activity size={20} />
+                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-surface/50 backdrop-blur-md aspect-square rounded-[2rem] p-6 flex flex-col justify-between border border-white/5 hover:bg-surface/80 transition-colors group">
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:bg-white/10 transition-all">
-                        <List size={20} />
+            <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-4 px-1">Statistiques</h2>
+            <div className="grid grid-cols-2 gap-5 mb-10">
+                <div className="bg-zinc-900/40 backdrop-blur-xl aspect-square rounded-[2.5rem] p-7 flex flex-col justify-between border border-white/5 hover:bg-zinc-800 transition-all group shadow-xl">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:text-white group-hover:bg-white/10 transition-all shadow-inner">
+                        <List size={22} />
                     </div>
                     <div>
-                        <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block mb-1">Total Blocs</span>
-                        <span className="text-3xl font-black tracking-tighter text-white">
+                        <span className="text-[10px] text-zinc-600 font-extrabold uppercase tracking-widest block mb-1">Total Blocs</span>
+                        <span className="text-4xl font-black tracking-tighter text-white italic">
                             {loading ? "-" : stats.totalRoutes}
                         </span>
                     </div>
                 </div>
-                <div className="bg-surface/50 backdrop-blur-md aspect-square rounded-[2rem] p-6 flex flex-col justify-between border border-white/5 hover:bg-surface/80 transition-colors group">
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-accent-pink group-hover:bg-accent-pink/10 transition-all">
-                        <PlusSquare size={20} />
+                <div className="bg-zinc-900/40 backdrop-blur-xl aspect-square rounded-[2.5rem] p-7 flex flex-col justify-between border border-white/5 hover:bg-zinc-800 transition-all group shadow-xl">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:text-accent-pink group-hover:bg-accent-pink/10 transition-all shadow-inner">
+                        <PlusSquare size={22} />
                     </div>
                     <div>
-                        <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block mb-1">Mes Croix</span>
-                        <span className="text-3xl font-black tracking-tighter text-white">0</span>
+                        <span className="text-[10px] text-zinc-600 font-extrabold uppercase tracking-widest block mb-1">Mes Croix</span>
+                        <span className="text-4xl font-black tracking-tighter text-white italic">0</span>
                     </div>
                 </div>
             </div>
 
             {/* Developer Slot */}
-            <a href="https://appleservice.fr" target="_blank" rel="noopener noreferrer" className="bg-surface/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between mb-24 transition-all hover:bg-surface/60 hover:border-white/10 group">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-zinc-800 to-black rounded-xl flex items-center justify-center text-white border border-white/10 shadow-lg">
-                        <span className="font-black italic text-xs tracking-tighter">CTL</span>
+            <a href="https://appleservice.fr" target="_blank" rel="noopener noreferrer" className="bg-zinc-900/40 border border-white/5 rounded-[32px] p-6 flex items-center justify-between mb-24 transition-all hover:bg-zinc-900 hover:border-white/10 group shadow-lg">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-zinc-800 to-black rounded-2xl flex items-center justify-center text-white border border-white/10 shadow-2xl relative overflow-hidden">
+                        <span className="font-black italic text-xs tracking-tighter relative z-10">CTL</span>
+                        <div className="absolute inset-0 bg-gradient-to-tr from-accent-pink/20 to-transparent" />
                     </div>
                     <div>
-                        <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest group-hover:text-zinc-400">Développé par</p>
-                        <p className="text-xs font-bold text-white group-hover:text-accent-pink transition-colors">Charly Tech & Luxe</p>
+                        <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] group-hover:text-zinc-500 mb-0.5">Developed by</p>
+                        <p className="text-sm font-black text-white group-hover:text-accent-pink transition-colors italic uppercase tracking-tight">Charly Tech & Luxe</p>
                     </div>
                 </div>
-                <ChevronRight size={16} className="text-zinc-600 group-hover:text-white transition-colors" />
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-zinc-600 group-hover:bg-accent-pink group-hover:text-white transition-all transform group-hover:translate-x-1">
+                    <ChevronRight size={16} />
+                </div>
             </a>
         </div>
     );
