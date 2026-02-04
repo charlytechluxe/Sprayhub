@@ -1,8 +1,8 @@
 {
   "name": "sprayhub-admin",
   "private": true,
-  "version": "1.0.0",
-  "description": "SprayHub Admin - Gestion du mur d'escalade",
+  "version": "1.0.1",
+  "description": "SprayHub Admin - Updated 2026",
   "author": "Coach Charly",
   "main": "dist-electron/main.cjs",
   "type": "module",
