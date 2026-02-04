@@ -234,36 +234,40 @@ export default function RouteDetailPage() {
     const GRADE_ORDER = ['Orange', 'Rose', 'Vert', 'Jaune', 'Bleu', 'Rouge', 'Blanc', 'Projet'];
 
     return (
-        <div className="flex flex-col h-screen bg-background text-white overflow-hidden">
+        <div className="flex flex-col h-screen bg-black text-white overflow-hidden">
             {/* Header / Canvas Area */}
-            <div className="flex-1 relative bg-background">
+            <div className="flex-1 relative">
+                {/* Floating Top Controls */}
                 <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start pointer-events-none">
-                    <button onClick={() => navigate(-1)} className="btn-touch w-10 h-10 bg-surface/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 pointer-events-auto shadow-lg hover:bg-surface/80 transition-all">
-                        <ArrowLeft size={20} />
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 pointer-events-auto shadow-2xl hover:bg-zinc-800 transition-all active:scale-90"
+                    >
+                        <ArrowLeft size={22} strokeWidth={2.5} />
                     </button>
+
                     <div className="flex gap-2 pointer-events-auto">
                         {(isAdmin || currentUserId === route.user_id) && (
                             <button
                                 onClick={handleDelete}
-                                className="btn-touch w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 backdrop-blur-md border border-red-500/50 shadow-lg hover:bg-red-500 hover:text-white transition-all"
+                                className="btn-touch w-11 h-11 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 backdrop-blur-xl border border-red-500/20 shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-90"
                             >
-                                <Trash2 size={18} />
+                                <Trash2 size={20} />
                             </button>
                         )}
-                        <button className="btn-touch w-10 h-10 bg-surface/50 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 shadow-lg hover:bg-surface/80 transition-all">
-                            <Share2 size={18} />
+                        <button className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 shadow-lg hover:bg-zinc-800 transition-all active:scale-90">
+                            <Share2 size={20} />
                         </button>
-                        {/* Poster Button */}
                         <button
                             onClick={() => navigate('/poster', { state: { route } })}
-                            className="btn-touch w-10 h-10 bg-accent-pink rounded-full flex items-center justify-center text-white shadow-[0_0_15px_rgba(255,0,85,0.4)] border border-white/20 hover:scale-105 transition-all"
+                            className="btn-touch w-11 h-11 bg-accent-pink rounded-2xl flex items-center justify-center text-white shadow-[0_8px_20px_rgba(251,32,86,0.3)] border border-white/20 hover:scale-105 transition-all active:scale-90"
                         >
-                            <Download size={18} />
+                            <Download size={20} />
                         </button>
                     </div>
                 </div>
 
-                <div className="w-full h-full">
+                <div className="w-full h-full bg-zinc-950">
                     <SprayCanvas
                         holds={route.holds || []}
                         wallId={route.wall_id}
@@ -273,101 +277,116 @@ export default function RouteDetailPage() {
                     />
                 </div>
 
-                {/* Grade Badge Overlay */}
-                <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none">
-                    <div className="flex items-center justify-center gap-6 mb-4 text-xs font-bold text-white/80 backdrop-blur-md p-2 rounded-full bg-surface/40 mx-auto w-fit px-6 border border-white/10 shadow-xl">
-                        <span>{route.grade}</span>
-                        <span className="w-1 h-1 bg-zinc-500 rounded-full"></span>
-                        <span>{allHoldIds.length} Prises</span>
+                {/* Refined Canvas Info Overlay */}
+                <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none">
+                    <div className="flex items-center gap-4 py-2.5 px-6 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: route.grade === 'Bleu' ? '#32A9D6' : route.grade === 'Vert' ? '#A4C639' : route.grade === 'Rouge' ? '#FF0000' : '#ffffff' }} />
+                            <span className="text-sm font-black uppercase tracking-tighter italic">{route.grade}</span>
+                        </div>
+                        <div className="w-px h-4 bg-white/10" />
+                        <span className="text-sm font-bold text-white/90">{allHoldIds.length} <span className="text-[10px] text-white/50 uppercase tracking-widest ml-0.5">Prises</span></span>
                     </div>
                 </div>
             </div>
 
-            {/* Bottom Sheet Details */}
-            <div className="bg-surface border-t border-white/5 p-6 rounded-t-3xl -mt-6 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                <div className="w-12 h-1 bg-zinc-700 rounded-full mx-auto mb-6 opacity-50" />
+            {/* Premium Bottom Sheet */}
+            <div className="bg-zinc-900/95 backdrop-blur-3xl border-t border-white/10 px-6 pt-2 pb-10 rounded-t-[40px] -mt-10 relative z-30 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
 
-                <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-1 text-white drop-shadow-md">{route.name || "Sans nom"}</h1>
+                <div className="flex justify-between items-center mb-10">
+                    <div className="flex-1 min-w-0 pr-4">
+                        <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none text-white truncate drop-shadow-2xl">
+                            {route.name || "SANS NOM"}
+                        </h1>
+                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                            <span className="w-1 h-1 bg-accent-pink rounded-full" /> Créé par {route.profiles?.username || 'Inconnu'}
+                        </p>
                     </div>
-                    {/* Tick Button */}
+
                     <button
                         onClick={handleSend}
-                        className={`px-6 py-3 rounded-2xl font-black uppercase tracking-wider active:scale-95 transition-all flex items-center gap-2 border ${isSent
-                            ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)] border-green-400/20'
-                            : 'bg-accent-pink text-white shadow-[0_0_20px_rgba(255,0,85,0.3)] border-white/10 hover:bg-accent-pink/90'
+                        className={`h-16 px-8 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-3 shadow-2xl border ${isSent
+                            ? 'bg-green-500 text-white border-green-400/20'
+                            : 'bg-white text-black border-white shadow-[0_0_30px_rgba(255,255,255,0.2)]'
                             }`}
                     >
-                        <CheckCircle size={18} />
-                        {isSent ? 'Validé ✓' : 'Croix'}
+                        {isSent ? (
+                            <>
+                                <CheckCircle size={22} strokeWidth={3} />
+                                <span className="text-sm">FAIT</span>
+                            </>
+                        ) : (
+                            <span className="text-sm">CROIX</span>
+                        )}
                     </button>
                 </div>
 
-                {/* Voting Section */}
-                <div className="bg-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wide">
-                            Ce bloc vous semble...
-                        </h3>
-                        {route.grade_adjusted_by_votes && (
-                            <div className="text-[10px] bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-full font-bold">
-                                ⚡ Ajusté par votes
+                {/* Voting & Stats Container */}
+                <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+                                RESSENTI DU GRADE
+                            </h3>
+                            {route.grade_adjusted_by_votes && (
+                                <div className="text-[9px] bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full font-black uppercase tracking-wider border border-yellow-500/20">
+                                    Ajusté
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => handleVote('easier')}
+                                className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${userVote && GRADE_ORDER.indexOf(userVote) < GRADE_ORDER.indexOf(route.grade)
+                                    ? 'bg-green-500 text-white border-green-400/50 shadow-[0_8px_20px_rgba(34,197,94,0.3)]'
+                                    : 'bg-zinc-800/50 text-green-400 border-white/5 hover:bg-zinc-800'
+                                    }`}
+                            >
+                                SOFT
+                            </button>
+                            <button
+                                onClick={() => handleVote('harder')}
+                                className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${userVote && GRADE_ORDER.indexOf(userVote) > GRADE_ORDER.indexOf(route.grade)
+                                    ? 'bg-red-500 text-white border-red-400/50 shadow-[0_8px_20px_rgba(239,68,68,0.3)]'
+                                    : 'bg-zinc-800/50 text-red-500 border-white/5 hover:bg-zinc-800'
+                                    }`}
+                            >
+                                HARD
+                            </button>
+                        </div>
+
+                        {voteStats && voteStats.total > 0 ? (
+                            <div className="text-[10px] text-zinc-600 font-bold text-center uppercase tracking-widest bg-black/20 py-2 rounded-xl">
+                                {voteStats.total} VOTE{voteStats.total > 1 ? 'S' : ''} • MAJORITÉ {voteStats.majority} ({voteStats.percentage}%)
+                            </div>
+                        ) : (
+                            <div className="text-[10px] text-zinc-700 font-bold text-center uppercase tracking-widest">
+                                Aucun vote pour le moment
                             </div>
                         )}
                     </div>
 
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => handleVote('easier')}
-                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${userVote && GRADE_ORDER.indexOf(userVote) < GRADE_ORDER.indexOf(route.grade)
-                                    ? 'bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-                                    : 'bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20'
-                                }`}
-                        >
-                            👍 Plus facile
-                        </button>
-                        <button
-                            onClick={() => handleVote('harder')}
-                            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${userVote && GRADE_ORDER.indexOf(userVote) > GRADE_ORDER.indexOf(route.grade)
-                                    ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.3)]'
-                                    : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
-                                }`}
-                        >
-                            👎 Plus dur
-                        </button>
-                    </div>
-
-                    {voteStats && voteStats.total > 0 && (
-                        <div className="text-xs text-zinc-500 text-center">
-                            {voteStats.total} vote{voteStats.total > 1 ? 's' : ''} •
-                            Majorité : <span className="text-zinc-400 font-bold">{voteStats.majority}</span> ({voteStats.percentage}%)
-                        </div>
-                    )}
-
-                    {userVote && (
-                        <div className="text-[10px] text-zinc-600 text-center">
-                            Vous avez voté : {userVote}
-                        </div>
-                    )}
-                </div>
-
-                <div className="bg-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl p-4 flex items-center justify-between shadow-inner">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-accent-blue/10 rounded-xl flex items-center justify-center text-accent-blue border border-accent-blue/20">
-                            <Star size={20} fill="currentColor" className="text-accent-blue" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Note Moyenne</p>
-                            <div className="flex items-center gap-1">
-                                <span className="text-white font-black text-lg">4.8</span>
-                                <span className="text-zinc-600 text-xs">(12 votes)</span>
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 flex items-center justify-between group active:bg-white/[0.06] transition-all">
+                        <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 bg-accent-blue/10 rounded-2xl flex items-center justify-center text-accent-blue border border-accent-blue/20 shadow-inner">
+                                <Star size={24} fill="currentColor" strokeWidth={0} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1">NOTE MOYENNE</p>
+                                <div className="flex items-end gap-2">
+                                    <span className="text-white font-black text-3xl leading-none italic uppercase tracking-tighter">4.8</span>
+                                    <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-1">/ 5</span>
+                                </div>
                             </div>
                         </div>
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:bg-white/10 group-hover:text-white transition-all">
+                            <ChevronRight size={20} />
+                        </div>
                     </div>
-                    <ChevronRight className="text-zinc-600" />
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
