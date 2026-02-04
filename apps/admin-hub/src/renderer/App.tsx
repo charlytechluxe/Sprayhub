@@ -21,6 +21,7 @@ import { supabase } from './lib/supabase';
 import { segmentWallImage } from './lib/replicate';
 import { TrainingView } from './TrainingView';
 import { SurgicalEditor } from './SurgicalEditor';
+import { PosterView } from './PosterView';
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
