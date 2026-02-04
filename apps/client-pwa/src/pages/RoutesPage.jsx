@@ -3,6 +3,12 @@ import { Search, Filter, Heart, ChevronRight, Bookmark } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 import FilterModal from '../components/FilterModal';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs) {
+    return twMerge(clsx(inputs));
+}
 
 const GRADE_HEX = {
     'Orange': '#FF8C00',
