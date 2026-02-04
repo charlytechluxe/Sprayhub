@@ -166,33 +166,35 @@ export default function CreateRoutePage() {
             {/* Canvas Area */}
             <div className="flex-1 relative overflow-hidden p-4">
 
-                {/* PERSISTENT LEGEND OVERLAY */}
-                <div className="absolute top-6 left-6 z-10 pointer-events-none">
-                    <div className="bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/5 shadow-xl pointer-events-auto">
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-[#00FF00] shadow-[0_0_8px_#00FF00]" />
-                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Départ</span>
+                {/* PERSISTENT LEGEND OVERLAY (Only visible when NO hold is selected) */}
+                {!activeHold && (
+                    <div className="absolute top-6 left-6 z-10 pointer-events-none animate-in fade-in duration-300">
+                        <div className="bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/5 shadow-xl pointer-events-auto">
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-[#00FF00] shadow-[0_0_8px_#00FF00]" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Départ</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-[#32A9D6] shadow-[0_0_8px_#32A9D6]" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Main+Pied</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-[#FFD700] shadow-[0_0_8px_#FFD700]" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Pied</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-[#FF0000] shadow-[0_0_8px_#FF0000]" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Top</span>
+                                </div>
+                                <div className="h-px bg-white/10 w-full my-0.5"></div>
+                                <p className="text-[9px] text-zinc-400 max-w-[80px] leading-tight text-center">
+                                    Tap 2x pour changer
+                                </p>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-[#32A9D6] shadow-[0_0_8px_#32A9D6]" />
-                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Main+Pied</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-[#FFD700] shadow-[0_0_8px_#FFD700]" />
-                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Pied</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-[#FF0000] shadow-[0_0_8px_#FF0000]" />
-                                <span className="text-[10px] font-bold text-white uppercase tracking-wider opacity-90">Top</span>
-                            </div>
-                            <div className="h-px bg-white/10 w-full my-0.5"></div>
-                            <p className="text-[9px] text-zinc-400 max-w-[80px] leading-tight text-center">
-                                Tap 2x pour changer
-                            </p>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {loadingWall ? (
                     <div className="flex items-center justify-center h-full">
