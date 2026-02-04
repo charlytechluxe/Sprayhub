@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
+// Checkpoint: Deployment fix 2026-02-04
 export default defineConfig({
 
     plugins: [
