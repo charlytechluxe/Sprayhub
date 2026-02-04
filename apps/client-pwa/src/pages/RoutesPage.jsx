@@ -19,6 +19,7 @@ export default function RoutesPage() {
     const [search, setSearch] = useState('');
     const [routes, setRoutes] = useState([]);
     const [plans, setPlans] = useState([]);
+    const [loading, setLoading] = useState(true);
     const fetchRoutes = async () => {
         try {
             // Try fetching from the stats view first
