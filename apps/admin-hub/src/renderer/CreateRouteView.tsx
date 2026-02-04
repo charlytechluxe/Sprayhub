@@ -2,7 +2,7 @@ import React from 'react';
 import { ExternalLink } from 'lucide-react';
 
 export function CreateRouteView() {
-    const pwaUrl = 'https://sprayhub-coach.vercel.app/create';
+    const pwaUrl = 'https://sprayhub.vercel.app/create';
 
     const handleOpenInBrowser = () => {
         window.open(pwaUrl, '_blank');
