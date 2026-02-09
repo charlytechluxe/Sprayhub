@@ -99,6 +99,13 @@ export default function PosterPage() {
                     @page {
                         margin: 0;
                     }
+                    /* Force full width in print, overriding the inline max-width */
+                    .poster-container {
+                        max-width: none !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        aspect-ratio: auto !important; /* Allow filling the page */
+                    }
                 }
             `}</style>
 
@@ -109,15 +116,14 @@ export default function PosterPage() {
             */}
             <div
                 className={cn(
-                    "relative overflow-hidden shadow-2xl transition-colors duration-500",
+                    "poster-container relative overflow-hidden shadow-2xl transition-colors duration-500",
                     isPrint ? "bg-zinc-100 text-zinc-900 shadow-xl border border-white/50" : "bg-zinc-900 text-white",
                     "print:shadow-none print:bg-zinc-100 print:text-zinc-900 print:overflow-visible print:border-none"
                 )}
                 style={{
                     width: '100%',
-                    maxWidth: isPrint ? 'none' : '600px', // Screen view width
-                    aspectRatio: isPrint ? 'auto' : '1 / 1.414', // Force A4 shape
-                    height: isPrint ? '100%' : 'auto'
+                    maxWidth: '600px', // Screen view width - kept even in preview mode to prevent stretching
+                    aspectRatio: '1 / 1.414', // Force A4 shape
                 }}
             >
                 {/* Background Grid & Vignette - Adjusted for Light Mode */}

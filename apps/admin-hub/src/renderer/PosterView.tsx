@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, Eye, EyeOff } from 'lucide-react';
+import { Printer, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { cn } from './lib/utils';
 
 // Interfaces for Props
@@ -103,6 +103,13 @@ function PosterView() {
                     @page {
                         margin: 0;
                     }
+                    /* Force full width in print, overriding the inline max-width */
+                    .poster-container {
+                        max-width: none !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        aspect-ratio: auto !important; /* Allow filling the page */
+                    }
                 }
             `}</style>
             {/* Global Print Styles for Neon Holds */}
@@ -123,15 +130,14 @@ function PosterView() {
             */}
             <div
                 className={cn(
-                    "relative overflow-hidden shadow-2xl transition-colors duration-500 shrink-0",
+                    "poster-container relative overflow-hidden shadow-2xl transition-colors duration-500 shrink-0",
                     isPrint ? "bg-zinc-100 text-zinc-900 shadow-xl border border-white/50" : "bg-zinc-900 text-white",
                     "print:shadow-none print:bg-zinc-100 print:text-zinc-900 print:overflow-visible print:border-none print:w-full print:h-full print:max-w-none"
                 )}
                 style={{
                     width: '100%',
-                    maxWidth: isPrint ? 'none' : '500px', // Slightly smaller for admin hub view
-                    aspectRatio: isPrint ? 'auto' : '1 / 1.414', // Force A4 shape
-                    height: isPrint ? '100%' : 'auto'
+                    maxWidth: '500px', // Slightly smaller for admin hub view
+                    aspectRatio: '1 / 1.414', // Force A4 shape
                 }}
             >
                 {/* Background Grid & Vignette - Adjusted for Light Mode */}
@@ -308,6 +314,14 @@ function PosterView() {
                 >
                     {previewPrint ? <EyeOff size={18} /> : <Eye size={18} />}
                     {previewPrint ? "Mode Sombre (Écran)" : "Aperçu Impression (Gris Clair)"}
+                </button>
+
+                <button
+                    onClick={() => window.open('https://sprayhub.vercel.app/poster', '_blank')}
+                    className="bg-zinc-800 text-white px-6 py-3 rounded-full font-bold shadow-xl hover:scale-105 transition-transform flex items-center gap-2 border border-white/10"
+                >
+                    <ExternalLink size={18} />
+                    Ouvrir dans le navigateur
                 </button>
 
                 <button
