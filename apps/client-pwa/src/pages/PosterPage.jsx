@@ -95,6 +95,11 @@ export default function PosterPage() {
                         padding: 0 !important;
                         overflow: visible !important;
                     }
+                    /* NUCLEAR OPTION: Force everything else to be white or transparent in print to kill dark bars */
+                    *:not(.poster-container):not(.poster-container *) {
+                        background-color: white !important;
+                        color: black !important;
+                    }
                     /* Hide everything else if not scoped, but since we are handling this component, we assume it takes full page */
                     @page {
                         margin: 0;
