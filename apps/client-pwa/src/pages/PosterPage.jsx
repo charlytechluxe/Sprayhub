@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScanLine, Printer, Eye, EyeOff } from 'lucide-react';
 // import { cn } from '../life/utils'; // Assuming cn exists or import from correct path, check imports
 
@@ -51,15 +51,56 @@ const NeonHold = ({ color, className, style, rotate, isPrint }) => {
 export default function PosterPage() {
     const [previewPrint, setPreviewPrint] = useState(false);
 
+    useEffect(() => {
+        const handleBeforePrint = () => {
+            setPreviewPrint(true);
+        };
+        const handleAfterPrint = () => {
+            setPreviewPrint(false);
+        };
+
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        return () => {
+            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, []);
+
     // Apply print styles if preview is active OR during actual print
     const isPrint = previewPrint;
+
+    const handlePrint = () => {
+        setPreviewPrint(true);
+        setTimeout(() => {
+            window.print();
+        }, 500); // Give React time to render the light theme
+    };
 
     return (
         <div className={cn(
             "min-h-screen flex items-center justify-center p-4 md:p-8 transition-colors duration-500",
             isPrint ? "bg-zinc-200" : "bg-zinc-900", // Outer background for preview
-            "print:p-0 print:bg-zinc-100 print:min-h-0"
+            "print:bg-white print:p-0 print:m-0 print:h-auto print:min-h-0 print:fixed print:inset-0 print:z-[9999]"
         )}>
+            <style>{`
+                @media print {
+                    body, html, #root {
+                        background-color: white !important;
+                        background: white !important;
+                        color-adjust: exact !important;
+                        -webkit-print-color-adjust: exact !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        overflow: visible !important;
+                    }
+                    /* Hide everything else if not scoped, but since we are handling this component, we assume it takes full page */
+                    @page {
+                        margin: 0;
+                    }
+                }
+            `}</style>
 
             {/* 
                 A4 Poster Container 
@@ -74,8 +115,9 @@ export default function PosterPage() {
                 )}
                 style={{
                     width: '100%',
-                    maxWidth: '600px', // Screen view width
-                    aspectRatio: '1 / 1.414', // Force A4 shape
+                    maxWidth: isPrint ? 'none' : '600px', // Screen view width
+                    aspectRatio: isPrint ? 'auto' : '1 / 1.414', // Force A4 shape
+                    height: isPrint ? '100%' : 'auto'
                 }}
             >
                 {/* Background Grid & Vignette - Adjusted for Light Mode */}
@@ -83,7 +125,9 @@ export default function PosterPage() {
                     "absolute inset-0 bg-[size:40px_40px] opacity-20 print:opacity-10 transition-opacity",
                     isPrint
                         ? "bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)]"
-                        : "bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)]"
+                        : "bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)]",
+                    // FORCE PRINT STYLE: Always use the dark lines (for light background) when printing
+                    "print:bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)]"
                 )} />
 
                 {/* Vignette: Dark for dark mode, subtle shadow for light mode */}
@@ -91,7 +135,9 @@ export default function PosterPage() {
                     "absolute inset-0 pointer-events-none transition-colors",
                     isPrint
                         ? "bg-radial-gradient from-transparent via-transparent to-black/5"
-                        : "bg-radial-gradient from-transparent via-black/20 to-black/40"
+                        : "bg-radial-gradient from-transparent via-black/20 to-black/40",
+                    // FORCE PRINT STYLE: Always use the light mode vignette (subtle)
+                    "print:bg-radial-gradient print:from-transparent print:via-transparent print:to-black/5"
                 )} />
 
                 {/* 
@@ -251,7 +297,7 @@ export default function PosterPage() {
                 </button>
 
                 <button
-                    onClick={() => window.print()}
+                    onClick={handlePrint}
                     className="bg-white text-black px-6 py-3 rounded-full font-bold shadow-xl hover:scale-105 transition-transform flex items-center gap-2"
                 >
                     <Printer size={18} />
