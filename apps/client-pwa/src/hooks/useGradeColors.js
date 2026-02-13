@@ -1,57 +1,48 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Fallback colors if database is not available
+// Fallback colors matching user request
 const FALLBACK_COLORS = [
-    { name: 'Orange', hex: '#FF8C00' },
-    { name: 'Rose', hex: '#FF00FF' },
-    { name: 'Vert', hex: '#A4C639' },
-    { name: 'Jaune', hex: '#FFD700' },
-    { name: 'Bleu', hex: '#32A9D6' },
-    { name: 'Rouge', hex: '#FF0000' },
-    { name: 'Blanc', hex: '#ffffff' },
-    { name: 'Projet', hex: '#a1a1aa' },
+    { id: '1', name: 'Orange', hex: '#f97316', display_order: 1 },
+    { id: '2', name: 'Rose', hex: '#ec4899', display_order: 2 },
+    { id: '3', name: 'Vert', hex: '#22c55e', display_order: 3 },
+    { id: '4', name: 'Jaune', hex: '#eab308', display_order: 4 },
+    { id: '5', name: 'Bleu', hex: '#3b82f6', display_order: 5 },
+    { id: '6', name: 'Rouge', hex: '#ef4444', display_order: 6 },
+    { id: '7', name: 'Blanc', hex: '#ffffff', display_order: 7 },
+    { id: '8', name: 'Projet', hex: '#52525b', display_order: 8 },
 ];
 
 export function useGradeColors() {
-    const [colors, setColors] = useState([]);
+    const [colors, setColors] = useState(FALLBACK_COLORS);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function fetchColors() {
             try {
-                // Try cache first
-                const cached = localStorage.getItem('grade_colors');
-                const cachedTime = localStorage.getItem('grade_colors_time');
-                const now = Date.now();
-
-                // Use cache if less than 1 hour old
-                if (cached && cachedTime && (now - parseInt(cachedTime)) < 3600000) {
-                    setColors(JSON.parse(cached));
-                    setLoading(false);
-                    return;
-                }
-
-                // Fetch from Supabase
+                // Fetch from Supabase gym_config
                 const { data, error } = await supabase
-                    .from('grade_colors')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('display_order');
+                    .from('gym_config')
+                    .select('value')
+                    .eq('key', 'grade_colors')
+                    .single();
 
                 if (error) throw error;
 
-                if (data && data.length > 0) {
-                    setColors(data);
-                    localStorage.setItem('grade_colors', JSON.stringify(data));
-                    localStorage.setItem('grade_colors_time', now.toString());
+                if (data && data.value && Array.isArray(data.value)) {
+                    // Force use of fallback if DB has old/incomplete list (less than 8 items)
+                    // This creates a "soft migration" to the new colors
+                    if (data.value.length < 8) {
+                        console.log("Old config detected, using new defaults");
+                        setColors(FALLBACK_COLORS);
+                    } else {
+                        setColors(data.value);
+                    }
                 } else {
-                    // Use fallback if no colors in database
                     setColors(FALLBACK_COLORS);
                 }
             } catch (err) {
                 console.error('Error fetching grade colors:', err);
-                // Use fallback on error
                 setColors(FALLBACK_COLORS);
             } finally {
                 setLoading(false);
@@ -66,12 +57,15 @@ export function useGradeColors() {
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'grade_colors'
-            }, () => {
-                // Invalidate cache and refetch
-                localStorage.removeItem('grade_colors');
-                localStorage.removeItem('grade_colors_time');
-                fetchColors();
+                table: 'gym_config'
+            }, (payload) => {
+                if (payload.new && payload.new.key === 'grade_colors') {
+                    const newColors = payload.new.value;
+                    // Only accept if it looks like a full list
+                    if (newColors && newColors.length >= 8) {
+                        setColors(newColors);
+                    }
+                }
             })
             .subscribe();
 

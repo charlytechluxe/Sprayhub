@@ -1,6 +1,12 @@
 {
-    "buildCommand": "npm run build",
+    "buildCommand": "npm run build:web",
     "outputDirectory": "dist",
-    "rootDirectory": "apps/client-pwa",
-    "framework": "vite"
+    "rootDirectory": "apps/admin-hub",
+    "framework": "vite",
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Apple, Chrome, ArrowRight, Loader2, User } from 'lucide-react';
+import { Mail, Lock, Apple, Chrome, ArrowRight, Loader2, User, Eye, EyeOff } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { validateContent } from '../lib/profanity';
@@ -19,6 +19,8 @@ export default function AuthPage() {
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleSocialLogin = async (provider) => {
@@ -202,14 +204,21 @@ export default function AuthPage() {
                     <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             placeholder="Mot de passe"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             minLength={isSignUp ? 8 : undefined}
-                            className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
+                            className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                        >
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
                     </div>
 
                     {/* Confirm Password field - only for signup */}
@@ -217,13 +226,20 @@ export default function AuthPage() {
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
                             <input
-                                type="password"
+                                type={showConfirmPassword ? "text" : "password"}
                                 placeholder="Confirmer le mot de passe"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required={isSignUp}
-                                className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
+                                className="w-full h-14 bg-surface/50 border border-white/10 rounded-2xl px-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent-pink/50 transition-all font-medium hover:bg-surface/80 shadow-inner"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                            >
+                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
                         </div>
                     )}
 

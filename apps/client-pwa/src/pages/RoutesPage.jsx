@@ -274,7 +274,7 @@ export default function RoutesPage() {
                                             </div>
                                             <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
                                                 <span className="w-1 h-1 bg-accent-pink rounded-full opacity-50" />
-                                                Par {route.author?.username || 'Inconnu'}
+                                                Par {route.author?.username || route.author_username || 'Inconnu'}
                                             </p>
                                         </div>
                                     </div>

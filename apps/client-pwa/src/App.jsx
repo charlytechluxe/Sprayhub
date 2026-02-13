@@ -124,7 +124,7 @@ const HomePage = () => {
 
             <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-4 px-1">Statistiques</h2>
             <div className="grid grid-cols-2 gap-5 mb-10">
-                <div className="bg-zinc-900/40 backdrop-blur-xl aspect-square rounded-[2.5rem] p-7 flex flex-col justify-between border border-white/5 hover:bg-zinc-800 transition-all group shadow-xl">
+                <Link to="/routes" className="bg-zinc-900/40 backdrop-blur-xl aspect-square rounded-[2.5rem] p-7 flex flex-col justify-between border border-white/5 hover:bg-zinc-800 transition-all group shadow-xl">
                     <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:text-white group-hover:bg-white/10 transition-all shadow-inner">
                         <List size={22} />
                     </div>
@@ -134,7 +134,7 @@ const HomePage = () => {
                             {loading ? "-" : stats.totalRoutes}
                         </span>
                     </div>
-                </div>
+                </Link>
                 <div className="bg-zinc-900/40 backdrop-blur-xl aspect-square rounded-[2.5rem] p-7 flex flex-col justify-between border border-white/5 hover:bg-zinc-800 transition-all group shadow-xl">
                     <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:text-accent-pink group-hover:bg-accent-pink/10 transition-all shadow-inner">
                         <PlusSquare size={22} />

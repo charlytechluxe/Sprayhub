@@ -34,3 +34,5 @@ yarn-error.log*
 # SAM Weights and generated images
 *.pth
 uploaded_media_*
+.vercel
+.env*.local

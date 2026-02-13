@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Save, X, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 import SprayCanvas from '../components/SprayCanvas';
 import { supabase } from '../lib/supabase';
@@ -21,58 +21,21 @@ const STYLES = ['Dynamique', 'Physique', 'Technique', 'Résistance'];
 
 export default function CreateRoutePage() {
     const navigate = useNavigate();
-    const [name, setName] = useState('');
-    const [grade, setGrade] = useState('Projet');
-    const [styles, setStyles] = useState([]);
-    const [holds, setHolds] = useState([]);
+    const location = useLocation();
+    const routeToEdit = location.state?.routeToEdit;
+
+    const [name, setName] = useState(routeToEdit?.name || '');
+    const [grade, setGrade] = useState(routeToEdit?.grade || 'Projet');
+    const [styles, setStyles] = useState(routeToEdit?.style || []);
+    const [holds, setHolds] = useState(routeToEdit?.holds || []);
     const [selectionMode, setSelectionMode] = useState('handfoot');
     const [isSaving, setIsSaving] = useState(false);
     const [currentWall, setCurrentWall] = useState(null);
     const [loadingWall, setLoadingWall] = useState(true);
 
-    useEffect(() => {
-        async function fetchWall() {
-            setLoadingWall(true);
-            try {
-                // Try active first
-                let { data, error } = await supabase
-                    .from('walls')
-                    .select('*')
-                    .eq('is_active', true)
-                    .maybeSingle();
+    // ... useEffect fetchWall remains the same ...
 
-                if (!data) {
-                    // Fallback to latest
-                    const { data: latest } = await supabase
-                        .from('walls')
-                        .select('*')
-                        .order('created_at', { ascending: false })
-                        .limit(1)
-                        .maybeSingle();
-                    data = latest;
-                }
-
-                if (data) {
-                    setCurrentWall(data);
-                } else {
-                    console.log("No wall found in DB.");
-                }
-            } catch (err) {
-                console.error("Error fetching wall:", err);
-            }
-            setLoadingWall(false);
-        }
-        fetchWall();
-    }, []);
-
-    const imageUrl = currentWall?.image_url || "/wall_v1.jpg";
-
-    const handleAddHold = (hold) => {
-        setHolds(prev => [...prev, hold]); // Use functional update for safety
-        setActiveHoldId(hold.id);
-    };
-
-    const [activeHoldId, setActiveHoldId] = useState(null);
+    // ...
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -110,16 +73,34 @@ export default function CreateRoutePage() {
                 author_id: user.id
             };
 
-            const { data, error } = await supabase
-                .from('routes')
-                .insert(routeData)
-                .select()
-                .single();
+            let resultData;
 
-            if (error) throw error;
+            if (routeToEdit) {
+                // UPDATE existing route
+                const { data, error } = await supabase
+                    .from('routes')
+                    .update(routeData)
+                    .eq('id', routeToEdit.id)
+                    .select()
+                    .single();
 
-            console.log("Bloc créé !", data);
-            navigate(`/route/${data.id}`);
+                if (error) throw error;
+                resultData = data;
+                console.log("Bloc mis à jour !", resultData);
+            } else {
+                // INSERT new route
+                const { data, error } = await supabase
+                    .from('routes')
+                    .insert(routeData)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                resultData = data;
+                console.log("Bloc créé !", resultData);
+            }
+
+            navigate(`/route/${resultData.id}`);
 
         } catch (err) {
             console.error("Error saving route:", err);

@@ -16,77 +16,120 @@ export function ConfigView() {
     const [editingColor, setEditingColor] = useState<GradeColor | null>(null);
     const [isCreating, setIsCreating] = useState(false);
 
+    // Default colors matching user request
+    const defaultColors: GradeColor[] = [
+        { id: '1', name: 'Orange', hex: '#f97316', display_order: 1, is_active: true }, // Très facile
+        { id: '2', name: 'Rose', hex: '#ec4899', display_order: 2, is_active: true },   // Facile
+        { id: '3', name: 'Vert', hex: '#22c55e', display_order: 3, is_active: true },   // Moyen
+        { id: '4', name: 'Jaune', hex: '#eab308', display_order: 4, is_active: true },  // Assez difficile
+        { id: '5', name: 'Bleu', hex: '#3b82f6', display_order: 5, is_active: true },   // Difficile
+        { id: '6', name: 'Rouge', hex: '#ef4444', display_order: 6, is_active: true },  // Très Difficile
+        { id: '7', name: 'Blanc', hex: '#ffffff', display_order: 7, is_active: true },  // Extreme
+        { id: '8', name: 'Projet', hex: '#52525b', display_order: 8, is_active: true }, // Premier à faire
+    ];
+
     useEffect(() => {
         fetchColors();
+
+        // Real-time subscription to sync with PWA/Other admins
+        const channel = supabase
+            .channel('config_colors_realtime')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'gym_config' },
+                (payload) => {
+                    console.log('Config change detected:', payload);
+                    if (payload.new && (payload.new as any).key === 'grade_colors') {
+                        setColors((payload.new as any).value);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchColors = async () => {
         try {
             const { data, error } = await supabase
-                .from('grade_colors')
-                .select('*')
-                .order('display_order');
+                .from('gym_config')
+                .select('value')
+                .eq('key', 'grade_colors')
+                .single();
 
-            if (error) throw error;
-            setColors(data || []);
+            if (error || !data) {
+                console.log('No config found or error, using defaults');
+                setColors(defaultColors);
+            } else {
+                // If DB has data, check if it matches our new standard (8 items)
+                if (data.value && Array.isArray(data.value) && data.value.length >= 8) {
+                    setColors(data.value);
+                } else {
+                    // Soft migration: DB has old list (e.g. 5 items), force display of new defaults
+                    console.log('Old config detected (< 8 colors), using new defaults');
+                    setColors(defaultColors);
+                }
+            }
         } catch (err) {
             console.error('Error fetching colors:', err);
+            setColors(defaultColors);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async (color: Partial<GradeColor>) => {
+    const saveToDb = async (newColors: GradeColor[]) => {
         try {
-            if (color.id) {
-                // Update existing
-                const { error } = await supabase
-                    .from('grade_colors')
-                    .update({
-                        name: color.name,
-                        hex: color.hex,
-                        display_order: color.display_order
-                    })
-                    .eq('id', color.id);
+            // Check if row exists
+            const { data } = await supabase.from('gym_config').select('id').eq('key', 'grade_colors').single();
 
-                if (error) throw error;
+            if (data) {
+                await supabase
+                    .from('gym_config')
+                    .update({ value: newColors, updated_at: new Date() })
+                    .eq('key', 'grade_colors');
             } else {
-                // Create new
-                const { error } = await supabase
-                    .from('grade_colors')
-                    .insert({
-                        name: color.name,
-                        hex: color.hex,
-                        display_order: colors.length + 1
-                    });
-
-                if (error) throw error;
+                await supabase
+                    .from('gym_config')
+                    .insert({ key: 'grade_colors', value: newColors });
             }
-
-            await fetchColors();
-            setEditingColor(null);
-            setIsCreating(false);
-        } catch (err: any) {
-            console.error('Error saving color:', err);
-            alert(`Erreur: ${err.message}`);
+            // Update local state
+            setColors(newColors);
+        } catch (err) {
+            console.error("Error saving to DB:", err);
+            alert("Erreur lors de la sauvegarde.");
         }
+    };
+
+    const handleSave = async (color: Partial<GradeColor>) => {
+        let newColors = [...colors];
+
+        if (color.id) {
+            // Update
+            newColors = newColors.map(c => c.id === color.id ? { ...c, ...color } as GradeColor : c);
+        } else {
+            // Create
+            const newColor: GradeColor = {
+                id: Math.random().toString(36).substr(2, 9),
+                name: color.name || 'Nouveau',
+                hex: color.hex || '#000000',
+                display_order: colors.length + 1,
+                is_active: true,
+                ...color
+            };
+            newColors.push(newColor);
+        }
+
+        await saveToDb(newColors);
+        setEditingColor(null);
+        setIsCreating(false);
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Supprimer cette couleur ?')) return;
-
-        try {
-            const { error } = await supabase
-                .from('grade_colors')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-            await fetchColors();
-        } catch (err: any) {
-            console.error('Error deleting color:', err);
-            alert(`Erreur: ${err.message}`);
-        }
+        const newColors = colors.filter(c => c.id !== id);
+        await saveToDb(newColors);
     };
 
     if (loading) {

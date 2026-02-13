@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Share2, Heart, Download, Trash2, ArrowLeft, CheckCircle, Star, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Share2, Heart, Download, Trash2, ArrowLeft, CheckCircle, Star, ChevronRight, Maximize2, Minimize2, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import SprayCanvas from '../components/SprayCanvas';
 
@@ -9,6 +9,8 @@ export default function RouteDetailPage() {
     const navigate = useNavigate();
     const [route, setRoute] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const [isAdmin, setIsAdmin] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(null);
@@ -248,12 +250,20 @@ export default function RouteDetailPage() {
 
                     <div className="flex gap-2 pointer-events-auto">
                         {(isAdmin || currentUserId === route.user_id) && (
-                            <button
-                                onClick={handleDelete}
-                                className="btn-touch w-11 h-11 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 backdrop-blur-xl border border-red-500/20 shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-90"
-                            >
-                                <Trash2 size={20} />
-                            </button>
+                            <>
+                                <button
+                                    onClick={handleDelete}
+                                    className="btn-touch w-11 h-11 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 backdrop-blur-xl border border-red-500/20 shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-90"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                                <button
+                                    onClick={() => navigate('/create', { state: { routeToEdit: route } })}
+                                    className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 shadow-lg hover:bg-zinc-800 transition-all active:scale-90"
+                                >
+                                    <Edit size={20} />
+                                </button>
+                            </>
                         )}
                         <button className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 shadow-lg hover:bg-zinc-800 transition-all active:scale-90">
                             <Share2 size={20} />
@@ -277,116 +287,129 @@ export default function RouteDetailPage() {
                     />
                 </div>
 
-                {/* Refined Canvas Info Overlay */}
-                <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none">
-                    <div className="flex items-center gap-4 py-2.5 px-6 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: route.grade === 'Bleu' ? '#32A9D6' : route.grade === 'Vert' ? '#A4C639' : route.grade === 'Rouge' ? '#FF0000' : '#ffffff' }} />
-                            <span className="text-sm font-black uppercase tracking-tighter italic">{route.grade}</span>
+                {/* Refined Canvas Info Overlay - Hidden in Fullscreen */}
+                {!isFullscreen && (
+                    <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none">
+                        <div className="flex items-center gap-4 py-2.5 px-6 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: route.grade === 'Bleu' ? '#32A9D6' : route.grade === 'Vert' ? '#A4C639' : route.grade === 'Rouge' ? '#FF0000' : '#ffffff' }} />
+                                <span className="text-sm font-black uppercase tracking-tighter italic">{route.grade}</span>
+                            </div>
+                            <div className="w-px h-4 bg-white/10" />
+                            <span className="text-sm font-bold text-white/90">{allHoldIds.length} <span className="text-[10px] text-white/50 uppercase tracking-widest ml-0.5">Prises</span></span>
                         </div>
-                        <div className="w-px h-4 bg-white/10" />
-                        <span className="text-sm font-bold text-white/90">{allHoldIds.length} <span className="text-[10px] text-white/50 uppercase tracking-widest ml-0.5">Prises</span></span>
                     </div>
-                </div>
+                )}
+
+                {/* Fullscreen Toggle */}
+                <button
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                    className="absolute bottom-6 right-6 w-12 h-12 bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all z-20"
+                >
+                    {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+                </button>
             </div>
 
             {/* Premium Bottom Sheet */}
-            <div className="bg-zinc-900/95 backdrop-blur-3xl border-t border-white/10 px-6 pt-2 pb-10 rounded-t-[40px] -mt-10 relative z-30 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+            {!isFullscreen && (
+                <div className="bg-zinc-900/95 backdrop-blur-3xl border-t border-white/10 px-6 pt-2 pb-10 rounded-t-[40px] -mt-10 relative z-30 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
+                    {/* Content of bottom sheet */}
+                    <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
 
-                <div className="flex justify-between items-center mb-10">
-                    <div className="flex-1 min-w-0 pr-4">
-                        <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none text-white truncate drop-shadow-2xl">
-                            {route.name || "SANS NOM"}
-                        </h1>
-                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
-                            <span className="w-1 h-1 bg-accent-pink rounded-full" /> Créé par {route.profiles?.username || 'Inconnu'}
-                        </p>
+                    <div className="flex justify-between items-center mb-10">
+                        <div className="flex-1 min-w-0 pr-4">
+                            <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none text-white truncate drop-shadow-2xl">
+                                {route.name || "SANS NOM"}
+                            </h1>
+                            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                                <span className="w-1 h-1 bg-accent-pink rounded-full" /> Créé par {route.profiles?.username || 'Inconnu'}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={handleSend}
+                            className={`h-16 px-8 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-3 shadow-2xl border ${isSent
+                                ? 'bg-green-500 text-white border-green-400/20'
+                                : 'bg-white text-black border-white shadow-[0_0_30px_rgba(255,255,255,0.2)]'
+                                }`}
+                        >
+                            {isSent ? (
+                                <>
+                                    <CheckCircle size={22} strokeWidth={3} />
+                                    <span className="text-sm">FAIT</span>
+                                </>
+                            ) : (
+                                <span className="text-sm">CROIX</span>
+                            )}
+                        </button>
                     </div>
 
-                    <button
-                        onClick={handleSend}
-                        className={`h-16 px-8 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-3 shadow-2xl border ${isSent
-                            ? 'bg-green-500 text-white border-green-400/20'
-                            : 'bg-white text-black border-white shadow-[0_0_30px_rgba(255,255,255,0.2)]'
-                            }`}
-                    >
-                        {isSent ? (
-                            <>
-                                <CheckCircle size={22} strokeWidth={3} />
-                                <span className="text-sm">FAIT</span>
-                            </>
-                        ) : (
-                            <span className="text-sm">CROIX</span>
-                        )}
-                    </button>
-                </div>
+                    {/* Voting & Stats Container */}
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+                                    RESSENTI DU GRADE
+                                </h3>
+                                {route.grade_adjusted_by_votes && (
+                                    <div className="text-[9px] bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full font-black uppercase tracking-wider border border-yellow-500/20">
+                                        Ajusté
+                                    </div>
+                                )}
+                            </div>
 
-                {/* Voting & Stats Container */}
-                <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
-                                RESSENTI DU GRADE
-                            </h3>
-                            {route.grade_adjusted_by_votes && (
-                                <div className="text-[9px] bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full font-black uppercase tracking-wider border border-yellow-500/20">
-                                    Ajusté
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => handleVote('easier')}
+                                    className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${userVote && GRADE_ORDER.indexOf(userVote) < GRADE_ORDER.indexOf(route.grade)
+                                        ? 'bg-green-500 text-white border-green-400/50 shadow-[0_8px_20px_rgba(34,197,94,0.3)]'
+                                        : 'bg-zinc-800/50 text-green-400 border-white/5 hover:bg-zinc-800'
+                                        }`}
+                                >
+                                    SOFT
+                                </button>
+                                <button
+                                    onClick={() => handleVote('harder')}
+                                    className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${userVote && GRADE_ORDER.indexOf(userVote) > GRADE_ORDER.indexOf(route.grade)
+                                        ? 'bg-red-500 text-white border-red-400/50 shadow-[0_8px_20px_rgba(239,68,68,0.3)]'
+                                        : 'bg-zinc-800/50 text-red-500 border-white/5 hover:bg-zinc-800'
+                                        }`}
+                                >
+                                    HARD
+                                </button>
+                            </div>
+
+                            {voteStats && voteStats.total > 0 ? (
+                                <div className="text-[10px] text-zinc-600 font-bold text-center uppercase tracking-widest bg-black/20 py-2 rounded-xl">
+                                    {voteStats.total} VOTE{voteStats.total > 1 ? 'S' : ''} • MAJORITÉ {voteStats.majority} ({voteStats.percentage}%)
+                                </div>
+                            ) : (
+                                <div className="text-[10px] text-zinc-700 font-bold text-center uppercase tracking-widest">
+                                    Aucun vote pour le moment
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => handleVote('easier')}
-                                className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${userVote && GRADE_ORDER.indexOf(userVote) < GRADE_ORDER.indexOf(route.grade)
-                                    ? 'bg-green-500 text-white border-green-400/50 shadow-[0_8px_20px_rgba(34,197,94,0.3)]'
-                                    : 'bg-zinc-800/50 text-green-400 border-white/5 hover:bg-zinc-800'
-                                    }`}
-                            >
-                                SOFT
-                            </button>
-                            <button
-                                onClick={() => handleVote('harder')}
-                                className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${userVote && GRADE_ORDER.indexOf(userVote) > GRADE_ORDER.indexOf(route.grade)
-                                    ? 'bg-red-500 text-white border-red-400/50 shadow-[0_8px_20px_rgba(239,68,68,0.3)]'
-                                    : 'bg-zinc-800/50 text-red-500 border-white/5 hover:bg-zinc-800'
-                                    }`}
-                            >
-                                HARD
-                            </button>
-                        </div>
-
-                        {voteStats && voteStats.total > 0 ? (
-                            <div className="text-[10px] text-zinc-600 font-bold text-center uppercase tracking-widest bg-black/20 py-2 rounded-xl">
-                                {voteStats.total} VOTE{voteStats.total > 1 ? 'S' : ''} • MAJORITÉ {voteStats.majority} ({voteStats.percentage}%)
-                            </div>
-                        ) : (
-                            <div className="text-[10px] text-zinc-700 font-bold text-center uppercase tracking-widest">
-                                Aucun vote pour le moment
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 flex items-center justify-between group active:bg-white/[0.06] transition-all">
-                        <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 bg-accent-blue/10 rounded-2xl flex items-center justify-center text-accent-blue border border-accent-blue/20 shadow-inner">
-                                <Star size={24} fill="currentColor" strokeWidth={0} />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1">NOTE MOYENNE</p>
-                                <div className="flex items-end gap-2">
-                                    <span className="text-white font-black text-3xl leading-none italic uppercase tracking-tighter">4.8</span>
-                                    <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-1">/ 5</span>
+                        <div className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 flex items-center justify-between group active:bg-white/[0.06] transition-all">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-accent-blue/10 rounded-2xl flex items-center justify-center text-accent-blue border border-accent-blue/20 shadow-inner">
+                                    <Star size={24} fill="currentColor" strokeWidth={0} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1">NOTE MOYENNE</p>
+                                    <div className="flex items-end gap-2">
+                                        <span className="text-white font-black text-3xl leading-none italic uppercase tracking-tighter">4.8</span>
+                                        <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-1">/ 5</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:bg-white/10 group-hover:text-white transition-all">
-                            <ChevronRight size={20} />
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-500 group-hover:bg-white/10 group-hover:text-white transition-all">
+                                <ChevronRight size={20} />
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
