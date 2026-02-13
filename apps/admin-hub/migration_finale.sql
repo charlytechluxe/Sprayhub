@@ -62,13 +62,7 @@ ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT f
 -- ✨ FIX BUG "INCONNU" : Ajout colonne author_username à routes
 ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS author_username TEXT;
 
--- ✨ FIX BUG "INCONNU" : Remplissage rétroactif des noms d'auteurs
--- Met à jour les routes existantes en récupérant le username depuis la table profiles
-UPDATE public.routes
-SET author_username = profiles.username
-FROM public.profiles
-WHERE routes.author_id = profiles.id
-AND (routes.author_username IS NULL OR routes.author_username = 'Inconnu' OR routes.author_username = '');
+-- (Le remplissage rétroactif se fera APRÈS la synchro des profils pour être sûr d'avoir les données)
 
 
 -- 4. Synchroniser vos comptes existants pour qu'ils apparaissent enfin
@@ -78,7 +72,6 @@ SELECT
   email, 
   raw_user_meta_data->>'full_name',
   -- ✨ SANITIZATION : Remplace caractères invalides (espaces, accents...) par '_'
-  -- Exemple : "Kévin Patrice" -> "K_vin_Patrice"
   SUBSTRING(
     REGEXP_REPLACE(
         COALESCE(NULLIF(raw_user_meta_data->>'username', ''), SPLIT_PART(email, '@', 1)),
@@ -89,6 +82,13 @@ SELECT
   )
 FROM auth.users
 ON CONFLICT (id) DO NOTHING;
+
+-- ✨ FIX BUG "INCONNU" : Remplir les auteurs manquants MAINTENANT que les profils sont là
+UPDATE public.routes
+SET author_username = profiles.username
+FROM public.profiles
+WHERE routes.author_id = profiles.id
+AND (routes.author_username IS NULL OR routes.author_username = 'Inconnu' OR routes.author_username = '');
 
 -- 5. VOUS PASSER ADMIN (Remplacez par votre mail si besoin)
 -- UPDATE public.profiles SET role = 'admin' WHERE email = 'VOTRE_EMAIL_ICI'; 
