@@ -84,6 +84,8 @@ FROM auth.users
 ON CONFLICT (id) DO NOTHING;
 
 -- ✨ FIX BUG "INCONNU" : Remplir les auteurs manquants MAINTENANT que les profils sont là
+-- ✨ FIX BUG "INCONNU" : Remplir les auteurs manquants MAINTENANT que les profils sont là
+-- FORCE UPDATE pour écraser 'Inconnu' même si déjà défini
 UPDATE public.routes
 SET author_username = profiles.username
 FROM public.profiles
