@@ -249,7 +249,7 @@ export default function RouteDetailPage() {
                     </button>
 
                     <div className="flex gap-2 pointer-events-auto">
-                        {(isAdmin || currentUserId === route.user_id) && (
+                        {(isAdmin || currentUserId === route.author_id) && (
                             <>
                                 <button
                                     onClick={handleDelete}

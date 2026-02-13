@@ -39,6 +39,21 @@ BEGIN
   END IF;
 END $$;
 
+-- ✨ FIX RLS: Autoriser la lecture des profils pour que les noms apparaissent
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone" 
+ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile" 
+ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+CREATE POLICY "Users can insert own profile" 
+ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- 2. Tables d'ENTRAÎNEMENT (Dossiers et Items)
 CREATE TABLE IF NOT EXISTS public.training_folders (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
