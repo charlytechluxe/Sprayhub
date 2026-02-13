@@ -51,10 +51,10 @@ export default function RoutesPage() {
                     .select('*, author:profiles!author_id(username)')
                     .order('created_at', { ascending: false });
                 if (basicError) throw basicError;
-                // Normalize data to prefer author_username if available, or fall back to profile relation
+                // Normalize data to prefer author_username if available, or fall back to profile relation (robust check)
                 data = basicData.map(r => ({
                     ...r,
-                    author_username: r.author_username || r.author?.username || 'Inconnu'
+                    author_username: r.author_username || r.author?.username || r.author?.[0]?.username || 'Inconnu'
                 }));
             }
 
