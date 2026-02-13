@@ -322,7 +322,7 @@ export default function RouteDetailPage() {
                                 {route.name || "SANS NOM"}
                             </h1>
                             <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
-                                <span className="w-1 h-1 bg-accent-pink rounded-full" /> Créé par {route.profiles?.username || 'Inconnu'}
+                                <span className="w-1 h-1 bg-accent-pink rounded-full" /> Créé par {route.author_username || route.profiles?.username || 'Inconnu'}
                             </p>
                         </div>
 
