@@ -51,7 +51,11 @@ export default function RoutesPage() {
                     .select('*, author:profiles!author_id(username)')
                     .order('created_at', { ascending: false });
                 if (basicError) throw basicError;
-                data = basicData;
+                // Normalize data to prefer author_username if available, or fall back to profile relation
+                data = basicData.map(r => ({
+                    ...r,
+                    author_username: r.author_username || r.author?.username || 'Inconnu'
+                }));
             }
 
             // Fetch User Interactions (Likes & Ascents)
@@ -274,7 +278,7 @@ export default function RoutesPage() {
                                             </div>
                                             <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
                                                 <span className="w-1 h-1 bg-accent-pink rounded-full opacity-50" />
-                                                Par {route.author?.username || route.author_username || 'Inconnu'}
+                                                Par {route.author_username}
                                             </p>
                                         </div>
                                     </div>
