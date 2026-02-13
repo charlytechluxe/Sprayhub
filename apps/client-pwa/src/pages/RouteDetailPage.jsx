@@ -45,7 +45,7 @@ export default function RouteDetailPage() {
             setLoading(true);
             const { data, error } = await supabase
                 .from('routes')
-                .select('*, wall:walls(*), author:profiles!author_id(username)')
+                .select('*, wall:walls(*)')
                 .eq('id', id)
                 .single();
 

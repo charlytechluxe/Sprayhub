@@ -28,14 +28,57 @@ export default function CreateRoutePage() {
     const [grade, setGrade] = useState(routeToEdit?.grade || 'Projet');
     const [styles, setStyles] = useState(routeToEdit?.style || []);
     const [holds, setHolds] = useState(routeToEdit?.holds || []);
+    const [activeHoldId, setActiveHoldId] = useState(null);
     const [selectionMode, setSelectionMode] = useState('handfoot');
     const [isSaving, setIsSaving] = useState(false);
     const [currentWall, setCurrentWall] = useState(null);
     const [loadingWall, setLoadingWall] = useState(true);
 
-    // ... useEffect fetchWall remains the same ...
+    useEffect(() => {
+        const fetchWall = async () => {
+            setLoadingWall(true);
+            try {
+                const { data, error } = await supabase
+                    .from('walls')
+                    .select('*')
+                    .limit(1)
+                    .single();
 
-    // ...
+                if (error) throw error;
+                setCurrentWall(data);
+            } catch (err) {
+                console.error("Error loading wall:", err);
+            } finally {
+                setLoadingWall(false);
+            }
+        };
+        fetchWall();
+    }, []);
+
+    const imageUrl = currentWall?.image_url;
+
+    const handleAddHold = (hold) => {
+        setHolds(prev => [...prev, hold]);
+        setActiveHoldId(hold.id);
+    };
+
+    const handleUpdateHold = (id, updatedHold, shouldFocus = false) => {
+        setHolds(holds.map(h => h.id === id ? updatedHold : h));
+        if (shouldFocus) setActiveHoldId(id);
+    };
+
+    const handleRemoveHold = (id) => {
+        setHolds(holds.filter(h => h.id !== id));
+        if (activeHoldId === id) setActiveHoldId(null);
+    };
+
+    const toggleStyle = (style) => {
+        if (styles.includes(style)) {
+            setStyles(styles.filter(s => s !== style));
+        } else {
+            setStyles([...styles, style]);
+        }
+    };
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -64,13 +107,22 @@ export default function CreateRoutePage() {
                 return;
             }
 
+            // Robust author resolution for new/edited blocks
+            let authorName = user.user_metadata?.username;
+            if (!authorName) {
+                const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+                authorName = profile?.username;
+            }
+            authorName = authorName || user.email?.split('@')[0] || 'Inconnu';
+
             const routeData = {
                 name: name.trim(),
                 grade: grade,
                 style: styles,
                 holds: holds,
-                wall_id: currentWall?.id, // Optional if wall_id is nullable, but recommended
-                author_id: user.id
+                wall_id: currentWall?.id,
+                author_id: user.id,
+                author_username: authorName
             };
 
             let resultData;
@@ -110,29 +162,10 @@ export default function CreateRoutePage() {
         }
     };
 
-    const handleUpdateHold = (id, updatedHold, shouldFocus = false) => {
-        setHolds(holds.map(h => h.id === id ? updatedHold : h));
-        if (shouldFocus) setActiveHoldId(id);
-    };
-
-    const handleRemoveHold = (id) => {
-        setHolds(holds.filter(h => h.id !== id));
-        if (activeHoldId === id) setActiveHoldId(null);
-    };
-
-    const toggleStyle = (style) => {
-        if (styles.includes(style)) {
-            setStyles(styles.filter(s => s !== style));
-        } else {
-            setStyles([...styles, style]);
-        }
-    };
-
     const activeHold = holds.find(h => h.id === activeHoldId);
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            {/* Header */}
             <header className="h-16 flex items-center justify-between px-4 border-b border-zinc-900 bg-zinc-950 z-20">
                 <button onClick={() => navigate(-1)} className="btn-touch text-zinc-400">
                     <X size={24} />
@@ -153,10 +186,7 @@ export default function CreateRoutePage() {
                 </button>
             </header>
 
-            {/* Canvas Area */}
             <div className="flex-1 relative overflow-hidden p-4">
-
-                {/* PERSISTENT LEGEND OVERLAY (Only visible when NO hold is selected) */}
                 {!activeHold && (
                     <div className="absolute top-6 left-6 z-10 pointer-events-none animate-in fade-in duration-300">
                         <div className="bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/5 shadow-xl pointer-events-auto">
@@ -206,10 +236,7 @@ export default function CreateRoutePage() {
                 )}
             </div>
 
-            {/* Bottom Bar: Grade Selector or Hold Inspector */}
             <div className="bg-surface/90 backdrop-blur-xl border-t border-white/10 z-30 transition-all duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-
-                {/* 1. HOLD INSPECTOR (If hold selected) */}
                 {activeHold ? (
                     <div className="p-4 space-y-4 animate-in slide-in-from-bottom-5">
                         <div className="flex items-center justify-between">
@@ -225,10 +252,8 @@ export default function CreateRoutePage() {
                         </div>
 
                         <div className="flex gap-4">
-                            {/* Color/Type Indicator (Click to Cycle) */}
                             <button
                                 onClick={() => {
-                                    // Cycle Type Logic
                                     const CYCLE_ORDER = ['handfoot', 'foot', 'start', 'top'];
                                     const currentIndex = CYCLE_ORDER.indexOf(activeHold.type);
                                     const nextType = CYCLE_ORDER[(currentIndex + 1) % 4];
@@ -245,7 +270,6 @@ export default function CreateRoutePage() {
                                     } shadow-[0_0_10px_currentColor]`} />
                             </button>
 
-                            {/* Comment Input */}
                             <div className="flex-1 relative">
                                 <input
                                     type="text"
@@ -265,9 +289,7 @@ export default function CreateRoutePage() {
                         </button>
                     </div>
                 ) : (
-                    /* 2. GRADE & STYLE SELECTOR (Default) */
                     <div className="p-4 space-y-6">
-                        {/* Difficulty Wheel */}
                         <div>
                             <div className="flex items-center justify-between mb-3 px-1">
                                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Difficulté</span>
@@ -296,7 +318,6 @@ export default function CreateRoutePage() {
                             </div>
                         </div>
 
-                        {/* Style Tags */}
                         <div>
                             <div className="flex items-center justify-between mb-3 px-1">
                                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Style</span>
