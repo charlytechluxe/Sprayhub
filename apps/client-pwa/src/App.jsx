@@ -147,7 +147,7 @@ const HomePage = () => {
             </div>
 
             {/* Developer Slot */}
-            <a href="https://appleservice.fr" target="_blank" rel="noopener noreferrer" className="bg-zinc-900/40 border border-white/5 rounded-[32px] p-6 flex items-center justify-between mb-24 transition-all hover:bg-zinc-900 hover:border-white/10 group shadow-lg">
+            <a href="https://portfolio-two-ivory-3xzm2h2kgs.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-zinc-900/40 border border-white/5 rounded-[32px] p-6 flex items-center justify-between mb-24 transition-all hover:bg-zinc-900 hover:border-white/10 group shadow-lg">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-zinc-800 to-black rounded-2xl flex items-center justify-center text-white border border-white/10 shadow-2xl relative overflow-hidden">
                         <span className="font-black italic text-xs tracking-tighter relative z-10">CTL</span>
