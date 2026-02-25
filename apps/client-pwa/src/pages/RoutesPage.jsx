@@ -43,6 +43,34 @@ export default function RoutesPage() {
                 .select('*')
                 .order('created_at', { ascending: false });
 
+            // ENHANCEMENT: Always try to refresh author names from profiles table if possible
+            // This fixes issues where the view might have stale or missing 'author_username'
+            if (!error && data) {
+                // Get all unique author IDs from the fetched routes
+                const authorIds = [...new Set(data.map(r => r.author_id).filter(Boolean))];
+
+                if (authorIds.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('id, username, full_name') // Added full_name
+                        .in('id', authorIds);
+
+                    if (profiles) {
+                        const profileMap = {};
+                        profiles.forEach(p => {
+                            // Prioritize username, then full_name
+                            profileMap[p.id] = p.username || p.full_name;
+                        });
+
+                        // Overwrite author_username with fresh data from profiles
+                        data = data.map(r => ({
+                            ...r,
+                            author_username: profileMap[r.author_id] || r.author_username || 'Inconnu'
+                        }));
+                    }
+                }
+            }
+
             // Fallback if view doesn't exist yet
             if (error) {
                 console.warn("View 'routes_with_stats' not found, falling back to basic table.");
@@ -51,11 +79,27 @@ export default function RoutesPage() {
                     .select('*, author:profiles!author_id(username)')
                     .order('created_at', { ascending: false });
                 if (basicError) throw basicError;
-                // Normalize data to prefer author_username if available, or fall back to profile relation (robust check)
-                data = basicData.map(r => ({
-                    ...r,
-                    author_username: r.author_username || r.author?.username || r.author?.[0]?.username || 'Inconnu'
-                }));
+
+                // Normalize data to prioritize profile username over stored username
+                data = basicData.map(r => {
+                    // Start with stored username
+                    let finalUsername = r.author_username;
+
+                    // If available, prefer the live profile username (handles updates)
+                    if (r.author?.username) {
+                        finalUsername = r.author.username;
+                    }
+
+                    // Fallbacks
+                    if (!finalUsername || finalUsername === 'Inconnu') {
+                        finalUsername = r.author?.[0]?.username || 'Inconnu';
+                    }
+
+                    return {
+                        ...r,
+                        author_username: finalUsername
+                    };
+                });
             }
 
             // Fetch User Interactions (Likes & Ascents)
@@ -278,7 +322,7 @@ export default function RoutesPage() {
                                             </div>
                                             <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
                                                 <span className="w-1 h-1 bg-accent-pink rounded-full opacity-50" />
-                                                Par {route.author_username}
+                                                Par {route.author_username || 'Inconnu'}
                                             </p>
                                         </div>
                                     </div>

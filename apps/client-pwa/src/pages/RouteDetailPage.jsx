@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Share2, Heart, Download, Trash2, ArrowLeft, CheckCircle, Star, ChevronRight, Maximize2, Minimize2, Edit } from 'lucide-react';
+import { clsx } from 'clsx';
 import { supabase } from '../lib/supabase';
 import SprayCanvas from '../components/SprayCanvas';
 
@@ -57,6 +58,16 @@ export default function RouteDetailPage() {
             const { count: ascents } = await supabase.from('ascents').select('*', { count: 'exact', head: true }).eq('route_id', id);
             setLikesCount(likes || 0);
             setAscentsCount(ascents || 0);
+
+            // Refine author name if needed
+            let currentRoute = data;
+            if (currentRoute && (!currentRoute.author_username || currentRoute.author_username === 'Inconnu') && currentRoute.author_id) {
+                const { data: profile } = await supabase.from('profiles').select('username, full_name').eq('id', currentRoute.author_id).single();
+                if (profile && (profile.username || profile.full_name)) {
+                    currentRoute = { ...currentRoute, author_username: profile.username || profile.full_name };
+                    setRoute(currentRoute);
+                }
+            }
 
             // Fetch vote stats
             await fetchVoteStats();
@@ -238,44 +249,50 @@ export default function RouteDetailPage() {
     return (
         <div className="flex flex-col h-screen bg-black text-white overflow-hidden">
             {/* Header / Canvas Area */}
-            <div className="flex-1 relative">
-                {/* Floating Top Controls */}
-                <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start pointer-events-none">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 pointer-events-auto shadow-2xl hover:bg-zinc-800 transition-all active:scale-90"
-                    >
-                        <ArrowLeft size={22} strokeWidth={2.5} />
-                    </button>
+            <div className={isFullscreen ? "fixed inset-0 z-[100] bg-black" : "flex-1 relative"}>
 
-                    <div className="flex gap-2 pointer-events-auto">
-                        {(isAdmin || currentUserId === route.author_id) && (
-                            <>
+                {/* Floating Top Controls - HIDDEN IN FULLSCREEN */}
+                {!isFullscreen && (
+                    <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start pointer-events-none">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 pointer-events-auto shadow-2xl hover:bg-zinc-800 transition-all active:scale-90"
+                        >
+                            <ArrowLeft size={22} strokeWidth={2.5} />
+                        </button>
+
+                        <div className="flex gap-2 pointer-events-auto ml-auto">
+                            {/* Delete Button: Creator ONLY */}
+                            {currentUserId === route.author_id && (
                                 <button
                                     onClick={handleDelete}
                                     className="btn-touch w-11 h-11 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 backdrop-blur-xl border border-red-500/20 shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-90"
                                 >
                                     <Trash2 size={20} />
                                 </button>
+                            )}
+
+                            {/* Edit Button: Creator ONLY */}
+                            {currentUserId === route.author_id && (
                                 <button
                                     onClick={() => navigate('/create', { state: { routeToEdit: route } })}
                                     className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 shadow-lg hover:bg-zinc-800 transition-all active:scale-90"
                                 >
                                     <Edit size={20} />
                                 </button>
-                            </>
-                        )}
-                        <button className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 shadow-lg hover:bg-zinc-800 transition-all active:scale-90">
-                            <Share2 size={20} />
-                        </button>
-                        <button
-                            onClick={() => navigate('/poster', { state: { route } })}
-                            className="btn-touch w-11 h-11 bg-accent-pink rounded-2xl flex items-center justify-center text-white shadow-[0_8px_20px_rgba(251,32,86,0.3)] border border-white/20 hover:scale-105 transition-all active:scale-90"
-                        >
-                            <Download size={20} />
-                        </button>
+                            )}
+                            <button className="btn-touch w-11 h-11 bg-zinc-900/60 rounded-2xl flex items-center justify-center text-white backdrop-blur-xl border border-white/10 shadow-lg hover:bg-zinc-800 transition-all active:scale-90">
+                                <Share2 size={20} />
+                            </button>
+                            <button
+                                onClick={() => navigate('/poster', { state: { route } })}
+                                className="btn-touch w-11 h-11 bg-accent-pink rounded-2xl flex items-center justify-center text-white shadow-[0_8px_20px_rgba(251,32,86,0.3)] border border-white/20 hover:scale-105 transition-all active:scale-90"
+                            >
+                                <Download size={20} />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div className="w-full h-full bg-zinc-950">
                     <SprayCanvas
@@ -301,10 +318,19 @@ export default function RouteDetailPage() {
                     </div>
                 )}
 
-                {/* Fullscreen Toggle */}
+                {/* Legend Overlay - Visible ONLY in Fullscreen now, or toggleable? 
+                    User asked to hide buttons but maybe KEEP the legend or put it back?
+                    User said: "ce petit bloc on peut le remttre quand les gens clique sur un bloc crer pour que il puisse revoir a quoi corresponde les couleur et quans il le ùette en plein ecran la legende disparais"
+                    => Legend disappears in fullscreen. That is already done by existing logic (hidden in fullscreen).
+                */}
+
+                {/* Fullscreen Toggle - Moved UP */}
                 <button
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="absolute bottom-6 right-6 w-12 h-12 bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all z-20"
+                    className={clsx(
+                        "absolute right-6 w-12 h-12 bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl flex items-center justify-center text-white shadow-xl active:scale-90 transition-all z-[110]",
+                        isFullscreen ? "bottom-20 bg-accent-pink/20 border-accent-pink/50 text-accent-pink" : "bottom-6"
+                    )}
                 >
                     {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
                 </button>

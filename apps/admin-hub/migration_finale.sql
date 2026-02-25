@@ -81,6 +81,7 @@ ALTER TABLE public.routes ADD COLUMN IF NOT EXISTS author_username TEXT;
 
 
 -- 4. Synchroniser vos comptes existants pour qu'ils apparaissent enfin
+-- 4. Synchroniser vos comptes existants pour qu'ils apparaissent enfin
 INSERT INTO public.profiles (id, email, full_name, username)
 SELECT 
   id, 
@@ -99,13 +100,17 @@ FROM auth.users
 ON CONFLICT (id) DO NOTHING;
 
 -- ✨ FIX BUG "INCONNU" : Remplir les auteurs manquants MAINTENANT que les profils sont là
--- ✨ FIX BUG "INCONNU" : Remplir les auteurs manquants MAINTENANT que les profils sont là
--- FORCE UPDATE pour écraser 'Inconnu' même si déjà défini
+-- FORCE UPDATE plus puissante : met à jour tout le monde pour garantir la synchro
 UPDATE public.routes
 SET author_username = profiles.username
 FROM public.profiles
 WHERE routes.author_id = profiles.id
-AND (routes.author_username IS NULL OR routes.author_username = 'Inconnu' OR routes.author_username = '');
+AND (
+    routes.author_username IS NULL 
+    OR routes.author_username = 'Inconnu' 
+    OR routes.author_username = ''
+    OR routes.author_username != profiles.username -- Force update si le nom a changé
+);
 
 -- 5. VOUS PASSER ADMIN (Remplacez par votre mail si besoin)
 -- UPDATE public.profiles SET role = 'admin' WHERE email = 'VOTRE_EMAIL_ICI'; 
@@ -341,6 +346,49 @@ SELECT cron.schedule(
 );
 
 -- ============================================================================
+-- 🆕 11. SÉCURITÉ RENFORCÉE (RLS Routes)
+-- ============================================================================
+
+-- Enable RLS on routes table
+ALTER TABLE public.routes ENABLE ROW LEVEL SECURITY;
+
+-- 1. Everyone can view routes
+DROP POLICY IF EXISTS "Routes are viewable by everyone" ON public.routes;
+CREATE POLICY "Routes are viewable by everyone" 
+ON public.routes FOR SELECT USING (true);
+
+-- 2. Authenticated users can insert routes
+DROP POLICY IF EXISTS "Users can insert their own routes" ON public.routes;
+CREATE POLICY "Users can insert their own routes" 
+ON public.routes FOR INSERT 
+WITH CHECK (auth.uid() = author_id);
+
+-- 3. Users can update their own routes (OR Admins/Coaches)
+DROP POLICY IF EXISTS "Users can update their own routes" ON public.routes;
+CREATE POLICY "Users can update their own routes" 
+ON public.routes FOR UPDATE 
+USING (
+    auth.uid() = author_id 
+    OR EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'coach'))
+);
+
+-- 4. Users can delete their own routes (OR Admins/Coaches)
+DROP POLICY IF EXISTS "Users can delete their own routes" ON public.routes;
+CREATE POLICY "Users can delete their own routes" 
+ON public.routes FOR DELETE 
+USING (
+    auth.uid() = author_id 
+    OR EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'coach'))
+);
+
+-- Also ensure 'walls' is readable
+ALTER TABLE public.walls ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Walls are viewable by everyone" ON public.walls;
+CREATE POLICY "Walls are viewable by everyone" 
+ON public.walls FOR SELECT USING (true);
+
+
+-- ============================================================================
 -- ✅ TERMINÉ GLOBAL
 -- ============================================================================
-SELECT '🚀 Migration finale avec FIX AUTEURS exécutée avec succès !' as final_status;
+SELECT '🚀 Migration finale avec FIX AUTEURS + SÉCURITÉ exécutée avec succès !' as final_status;

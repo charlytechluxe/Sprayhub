@@ -107,13 +107,25 @@ export default function CreateRoutePage() {
                 return;
             }
 
-            // Robust author resolution for new/edited blocks
-            let authorName = user.user_metadata?.username;
-            if (!authorName) {
-                const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-                authorName = profile?.username;
+            // 1. Get accurate username from 'profiles' table
+            let authorName = 'Grimpeur';
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('username, full_name')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    authorName = profile.username || profile.full_name || user.user_metadata?.username || user.email?.split('@')[0];
+                } else {
+                    // Fallback to metadata if profile fetch fails
+                    authorName = user.user_metadata?.username || user.email?.split('@')[0];
+                }
+            } catch (err) {
+                console.warn("Could not fetch profile for author name, using fallback.", err);
+                authorName = user.user_metadata?.username || user.email?.split('@')[0];
             }
-            authorName = authorName || user.email?.split('@')[0] || 'Inconnu';
 
             const routeData = {
                 name: name.trim(),
@@ -122,13 +134,13 @@ export default function CreateRoutePage() {
                 holds: holds,
                 wall_id: currentWall?.id,
                 author_id: user.id,
-                author_username: authorName
+                author_username: authorName // Explicitly saving the resolved username
             };
 
             let resultData;
 
             if (routeToEdit) {
-                // UPDATE existing route
+                // UPDATE
                 const { data, error } = await supabase
                     .from('routes')
                     .update(routeData)
@@ -138,9 +150,8 @@ export default function CreateRoutePage() {
 
                 if (error) throw error;
                 resultData = data;
-                console.log("Bloc mis à jour !", resultData);
             } else {
-                // INSERT new route
+                // INSERT
                 const { data, error } = await supabase
                     .from('routes')
                     .insert(routeData)
@@ -149,7 +160,6 @@ export default function CreateRoutePage() {
 
                 if (error) throw error;
                 resultData = data;
-                console.log("Bloc créé !", resultData);
             }
 
             navigate(`/route/${resultData.id}`);
